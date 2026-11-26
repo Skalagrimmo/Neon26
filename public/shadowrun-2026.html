@@ -1,0 +1,3313 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHADOWRUN 2026 // NEO-NODE</title>
+  <style>
+    :root {
+      --bg-void: #080b11;
+      --bg-surface: #111827;
+      --bg-panel: #161f30;
+      --border-hairline: rgba(148, 163, 184, 0.2);
+      --text-primary: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #06b6d4;
+      --accent-crimson: #ef4444;
+      --accent-emerald: #10b981;
+      --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+      --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+
+    #game-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, #111a2c 0%, #070a10 100%);
+    }
+
+    canvas#world-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    /* === HUD OVERLAYS === */
+    .hud-top {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-card {
+      pointer-events: auto;
+      background: rgba(13, 19, 31, 0.88);
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      padding: 10px 14px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .vitals-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 260px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar-label {
+      width: 34px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 100ms linear;
+    }
+
+    .bar-fill.hp { background: linear-gradient(90deg, #dc2626, #ef4444); }
+    .bar-fill.ram { background: linear-gradient(90deg, #0891b2, #22d3ee); }
+    .bar-val {
+      width: 56px;
+      text-align: right;
+      color: var(--text-primary);
+    }
+
+    .stats-inline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 2px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-item strong {
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+    .stat-item.cyan strong {
+      color: var(--accent-cyan);
+    }
+
+    .quest-panel {
+      max-width: 380px;
+      text-align: right;
+    }
+
+    .zone-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--accent-amber);
+    }
+
+    .quest-text {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--text-primary);
+    }
+
+    .hud-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .btn-mini {
+      background: rgba(30, 41, 59, 0.85);
+      color: var(--text-primary);
+      border: 1px solid var(--border-hairline);
+      border-radius: 4px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: border-color 120ms, background 120ms;
+    }
+
+    .btn-mini:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.16);
+    }
+
+    /* === BOTTOM ACTION BAR === */
+    .hud-bottom {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .skill-slot {
+      pointer-events: auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(13, 19, 31, 0.9);
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      padding: 7px 11px;
+      cursor: pointer;
+      transition: transform 120ms, border-color 120ms, opacity 120ms;
+    }
+
+    .skill-slot:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-1px);
+    }
+
+    .skill-slot.disabled {
+      opacity: 0.45;
+    }
+
+    .skill-slot.active-buff {
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .skill-key {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-amber);
+    }
+
+    .skill-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .skill-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .skill-cost {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-cyan);
+    }
+
+    /* === COMBO & TOAST === */
+    .combo-badge {
+      position: absolute;
+      top: 124px;
+      left: 16px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 150ms, transform 150ms;
+      z-index: 10;
+    }
+
+    .combo-badge.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .combo-num {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--accent-amber);
+      text-shadow: 0 2px 14px rgba(245, 158, 11, 0.45);
+    }
+
+    .combo-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    .toast-stack {
+      position: absolute;
+      top: 96px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    .toast-msg {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(6, 182, 212, 0.45);
+      color: var(--text-primary);
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    /* === MODALS (TITLE, DIALOGUE, HACKING, SHOP, PAUSE, END) === */
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 9, 15, 0.78);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 30;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 720px;
+      background: #0f1624;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 8px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #141d2f;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .modal-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-cyan);
+    }
+
+    .modal-body {
+      padding: 18px;
+    }
+
+    .btn-primary {
+      background: var(--accent-amber);
+      color: #0b0f17;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 18px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 120ms, transform 120ms;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text-primary);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 5px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    /* === TITLE SCREEN === */
+    .title-card {
+      max-width: 640px;
+      padding: 28px;
+    }
+
+    .title-kicker {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .title-h1 {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 700;
+      line-height: 1.08;
+      margin: 0 0 12px 0;
+      color: var(--text-primary);
+    }
+
+    .title-h1 span {
+      color: var(--accent-amber);
+    }
+
+    .title-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin: 0 0 18px 0;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ctrl-key {
+      font-family: var(--font-mono);
+      color: var(--accent-amber);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* === DIALOGUE (SNES SHADOWRUN STYLE) === */
+    .dialogue-layout {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 16px;
+    }
+
+    .portrait-frame {
+      width: 112px;
+      height: 128px;
+      background: #0a101d;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .dialogue-text {
+      min-height: 96px;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #e2e8f0;
+      background: rgba(9, 13, 22, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 5px;
+      padding: 12px 14px;
+    }
+
+    .keywords-wrap {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .keywords-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .keywords-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .kw-btn {
+      background: #172236;
+      color: #f8fafc;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 4px;
+      padding: 6px 11px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms;
+    }
+
+    .kw-btn:hover {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: var(--accent-amber);
+    }
+
+    .kw-btn.asked {
+      border-color: rgba(148, 163, 184, 0.25);
+      color: var(--text-muted);
+    }
+
+    .kw-btn.action-btn {
+      border-color: var(--accent-cyan);
+      color: #67e8f9;
+    }
+
+    /* === HACKING MATRIX 2026 === */
+    .hack-layout {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 18px;
+    }
+
+    .hack-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .hack-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #131d30;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: border-color 100ms, background 100ms, transform 100ms;
+    }
+
+    .hack-cell.eligible {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.14);
+      color: #ffffff;
+    }
+
+    .hack-cell.eligible:hover {
+      background: rgba(6, 182, 212, 0.28);
+      transform: scale(1.03);
+    }
+
+    .hack-cell.used {
+      opacity: 0.28;
+      cursor: default;
+    }
+
+    .hack-cell.ice {
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+
+    .hack-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hack-box {
+      background: rgba(9, 13, 22, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
+      padding: 10px 12px;
+    }
+
+    .hack-seq {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .seq-tok {
+      padding: 3px 7px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .seq-tok.done {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: #6ee7b7;
+    }
+
+    /* === SHOP === */
+    .shop-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shop-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(9, 13, 22, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
+    }
+
+    .shop-item h4 {
+      margin: 0 0 3px 0;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .shop-item p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+<div id="game-root">
+  <canvas id="world-canvas"></canvas>
+
+  <!-- TOP HUD -->
+  <div class="hud-top" id="hud-top" style="display:none;">
+    <div class="hud-card vitals-grid">
+      <div class="bar-row">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div class="bar-fill hp" id="hud-hp-bar" style="width:100%"></div></div>
+        <span class="bar-val" id="hud-hp-val">120/120</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">RAM</span>
+        <div class="bar-track"><div class="bar-fill ram" id="hud-ram-bar" style="width:100%"></div></div>
+        <span class="bar-val" id="hud-ram-val">100/100</span>
+      </div>
+      <div class="stats-inline">
+        <span class="stat-item">₵ <strong id="hud-credits">150</strong></span>
+        <span class="stat-item cyan">Набої <strong id="hud-ammo">12</strong></span>
+        <span class="stat-item">Карма <strong id="hud-karma">0</strong></span>
+        <span class="stat-item cyan" id="hud-key-ind"></span>
+      </div>
+    </div>
+
+    <div class="hud-card quest-panel">
+      <div class="zone-title" id="hud-zone">Сектор 1 · Провулок «Синтез-7»</div>
+      <div class="quest-text" id="hud-quest">Поговоріть з фіксером Мартою «Проксі» [E]</div>
+      <div class="hud-actions">
+        <button class="btn-mini" id="btn-audio-toggle">Звук: Увімк</button>
+        <button class="btn-mini" id="btn-save-game">Зберегти</button>
+        <button class="btn-mini" id="btn-pause-game">Пауза [Esc]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMBO COUNTER -->
+  <div class="combo-badge" id="combo-badge">
+    <div class="combo-num" id="combo-num">0x</div>
+    <div class="combo-sub" id="combo-sub">COMBO</div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- BOTTOM QUICK-HACK & COMBAT STRIP -->
+  <div class="hud-bottom" id="hud-bottom" style="display:none;">
+    <div class="skill-slot" id="slot-inject" data-skill="inject">
+      <span class="skill-key">1</span>
+      <div class="skill-meta">
+        <span class="skill-name">Промпт-ін'єкція</span>
+        <span class="skill-cost">30 RAM · Злам ШІ</span>
+      </div>
+    </div>
+    <div class="skill-slot" id="slot-overclock" data-skill="overclock">
+      <span class="skill-key">2</span>
+      <div class="skill-meta">
+        <span class="skill-name">Розгін-26</span>
+        <span class="skill-cost">40 RAM · Сповільнення</span>
+      </div>
+    </div>
+    <div class="skill-slot" id="slot-emp" data-skill="emp">
+      <span class="skill-key">3</span>
+      <div class="skill-meta">
+        <span class="skill-name">Sub-GHz EMP</span>
+        <span class="skill-cost">45 RAM · Пробій щитів</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TITLE MODAL -->
+  <div class="modal-backdrop open" id="modal-title">
+    <div class="modal-box title-card">
+      <div class="title-kicker">SHADOWRUN SNES SPIRIT · 2026 CYBERPUNK BEAT'EM UP</div>
+      <h1 class="title-h1">SHADOWRUN <span>2026</span></h1>
+      <p class="title-desc">
+        Нічний сектор під контролем корпоративних LLM-систем спостереження, автономних FPV-дронів та
+        біометричних шлюзів. Ви — вуличний раннер із моноструною, смарт-пістолетом і SDR-декою.
+        Вибийте дані «Проєкту Хімера» з дата-сховища Kuroda-Bio.
+      </p>
+      <div class="controls-grid">
+        <div class="ctrl-row"><span>Рух (8 напрямків)</span><span class="ctrl-key">WASD / Стрілки</span></div>
+        <div class="ctrl-row"><span>Ривок (i-frames)</span><span class="ctrl-key">Space / Shift</span></div>
+        <div class="ctrl-row"><span>Комбо удар (x3)</span><span class="ctrl-key">J / ЛКМ</span></div>
+        <div class="ctrl-row"><span>Важкий пробій</span><span class="ctrl-key">K / ПКМ</span></div>
+        <div class="ctrl-row"><span>Смарт-пістолет</span><span class="ctrl-key">L / Q</span></div>
+        <div class="ctrl-row"><span>Діалог / Злам</span><span class="ctrl-key">E</span></div>
+        <div class="ctrl-row"><span>Швидкі хаки</span><span class="ctrl-key">1 · 2 · 3</span></div>
+        <div class="ctrl-row"><span>Пауза</span><span class="ctrl-key">Esc</span></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-primary" id="btn-start-new">Почати рейд</button>
+        <button class="btn-secondary" id="btn-continue-save" style="display:none;">Продовжити збереження</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIALOGUE MODAL -->
+  <div class="modal-backdrop" id="modal-dialogue">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" id="dlg-npc-name">NPC</h3>
+          <div class="modal-sub" id="dlg-npc-role">Роль</div>
+        </div>
+        <button class="btn-mini" id="btn-dlg-close">Вийти [Esc]</button>
+      </div>
+      <div class="modal-body">
+        <div class="dialogue-layout">
+          <canvas class="portrait-frame" id="dlg-portrait" width="112" height="128"></canvas>
+          <div class="dialogue-text" id="dlg-text">...</div>
+        </div>
+        <div class="keywords-wrap">
+          <div class="keywords-label">Ключові теми розмови (як у класичному Shadowrun):</div>
+          <div class="keywords-list" id="dlg-keywords"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HACKING MODAL -->
+  <div class="modal-backdrop" id="modal-hack">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" id="hack-title">Вторгнення у Zero-Trust вузол</h3>
+          <div class="modal-sub" id="hack-subtitle">Зберіть послідовність експлойтів</div>
+        </div>
+        <button class="btn-mini" id="btn-hack-abort">Від'єднатися [Esc]</button>
+      </div>
+      <div class="modal-body">
+        <div class="hack-layout">
+          <div class="hack-grid" id="hack-grid"></div>
+          <div class="hack-sidebar">
+            <div class="hack-box">
+              <div class="bar-label" style="width:auto; margin-bottom:6px;">АКТИВНИЙ ТРЕЙС ШІ-ЗАХИСТУ</div>
+              <div class="bar-track" style="height:10px;">
+                <div class="bar-fill hp" id="hack-trace-bar" style="width:0%"></div>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:11px; margin-top:4px; color:var(--text-muted);" id="hack-timer-text">
+                Залишилось: 14.0с
+              </div>
+            </div>
+            <div class="hack-box">
+              <div class="bar-label" style="width:auto;">БУФЕР ЕКСПЛОЙТУ</div>
+              <div class="hack-seq" id="hack-target-seq"></div>
+            </div>
+            <div class="hack-box" style="font-size:12px; color:#cbd5e1; line-height:1.45;">
+              Натискайте підсвічені клітинки рядка чи стовпця, щоб зібрати потрібні токени. Уникайте червоних пасток <strong>ICE</strong> (+25% тривоги).
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP MODAL -->
+  <div class="modal-backdrop" id="modal-shop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">Підпільна клініка Дока «Фірмвера»</h3>
+          <div class="modal-sub" id="shop-wallet">Баланс: 150 ₵ · Карма: 0</div>
+        </div>
+        <button class="btn-mini" id="btn-shop-close">Закрити [Esc]</button>
+      </div>
+      <div class="modal-body">
+        <div class="shop-list" id="shop-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAUSE / ENDGAME MODAL -->
+  <div class="modal-backdrop" id="modal-system">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-head">
+        <h3 class="modal-title" id="sys-title">Пауза</h3>
+        <span class="modal-sub" id="sys-sub">СИСТЕМНЕ МЕНЮ</span>
+      </div>
+      <div class="modal-body">
+        <p id="sys-body" style="margin:0 0 18px 0; font-size:14px; line-height:1.6; color:#cbd5e1;"></p>
+        <div id="sys-stats" style="display:none; margin-bottom:18px; font-family:var(--font-mono); font-size:12px; background:rgba(9,13,22,0.7); padding:12px; border-radius:5px; border:1px solid rgba(148,163,184,0.18);"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn-primary" id="btn-sys-primary">Продовжити</button>
+          <button class="btn-secondary" id="btn-sys-restart">Почати заново</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ============================================================================
+   * MODULE 01: CONFIG & CONSTANTS
+   * Dependencies: None
+   * Exports: CONFIG (tuning, palettes, zones, dialogue trees, shop items)
+   * Seam note: Move cleanly to src/config/gameConfig.ts
+   * ========================================================================== */
+  const CONFIG = {
+    TILE_W: 64,
+    TILE_H: 32,
+    GRAVITY: 1450,
+    FIXED_DT: 1 / 60,
+    PLAYER_BASE: {
+      maxHp: 120,
+      maxRam: 100,
+      ramRegen: 6.5,
+      speed: 230,
+      dashSpeed: 540,
+      dashDuration: 0.17,
+      dashCooldown: 0.45,
+      lightDmg: 18,
+      heavyDmg: 34,
+      gunDmg: 22,
+      ammoMax: 18
+    },
+    SKILLS: {
+      inject: { cost: 30, cooldown: 3.0, range: 280 },
+      overclock: { cost: 40, cooldown: 8.0, duration: 3.8 },
+      emp: { cost: 45, cooldown: 5.0, radius: 175, dmg: 32 }
+    },
+    SHOP_ITEMS: [
+      {
+        id: "kinetic_knuckles",
+        name: "Кінетичні кастети MK-II",
+        desc: "+8 до шкоди всіх ударів ближнього бою",
+        costCredits: 140,
+        costKarma: 1,
+        maxRank: 2,
+        apply(p) { p.meleeBonus += 8; }
+      },
+      {
+        id: "subdermal_armor",
+        name: "Керамічна підшкірна броня",
+        desc: "+35 до макс. HP та миттєве лікування",
+        costCredits: 160,
+        costKarma: 1,
+        maxRank: 2,
+        apply(p) { p.maxHp += 35; p.hp = p.maxHp; }
+      },
+      {
+        id: "neural_ram",
+        name: "Оптимізатор RAM (Edge-LLM)",
+        desc: "+30 макс. RAM та швидша регенерація",
+        costCredits: 150,
+        costKarma: 1,
+        maxRank: 2,
+        apply(p) { p.maxRam += 30; p.ram = p.maxRam; p.ramRegenBonus += 3; }
+      },
+      {
+        id: "smart_capacitor",
+        name: "Конденсатор смарт-пістолета",
+        desc: "+10 шкоди пострілу та +6 набоїв",
+        costCredits: 120,
+        costKarma: 0,
+        maxRank: 2,
+        apply(p) { p.gunBonus += 10; p.ammo = Math.min(p.maxAmmo, p.ammo + 6); }
+      },
+      {
+        id: "trauma_gel",
+        name: "Біо-гель «Травма-Пак»",
+        desc: "Відновлює +60 HP і +4 набої",
+        costCredits: 65,
+        costKarma: 0,
+        maxRank: 99,
+        apply(p) { p.hp = Math.min(p.maxHp, p.hp + 60); p.ammo = Math.min(p.maxAmmo, p.ammo + 4); }
+      }
+    ],
+    DIALOGUES: {
+      marta: {
+        name: "Марта «Проксі»",
+        role: "Вуличний фіксер · Сектор «Синтез-7»",
+        portraitColor: "#f59e0b",
+        portraitAccent: "#06b6d4",
+        greeting: "Тихіше, раннере. Над районом висять ретранслятори Kuroda-Bio. Якщо ти ще дихаєш без підписки — маю роботу.",
+        keywords: [
+          {
+            id: "contract",
+            label: "Контракт",
+            requires: null,
+            unlocks: ["chimera", "biometrics"],
+            text: "Kuroda-Bio захопили стару підстанцію «Транзит-Мережа» і тримають там ваги моделі «Хімера». Зламай їхній шлюз або пробий охорону, забери ядро зі сховища — і отримаєш 800 ₵ без податку.",
+            onSelect(state, bus) {
+              if (!state.flags.gotContract) {
+                state.flags.gotContract = true;
+                state.player.credits += 100;
+                state.questText = "Перейдіть на схід до провулку або поговоріть з Кешем щодо проходу в Сектор 2.";
+                bus.emit("state:toast", "Отримано аванс: +100 ₵");
+                bus.emit("quest:update");
+              }
+            }
+          },
+          {
+            id: "chimera",
+            label: "Проєкт Хімера",
+            requires: "chimera",
+            unlocks: ["prompt_inject"],
+            text: "Це автономний алгоритм зачистки. Він керує бойовими FPV-дронами через звичайні вежі 6G. Але в ньому є діра: їхній ШІ довіряє підписаним промпт-пакетам. Використовуй [1], щоб перехоплювати техніку."
+          },
+          {
+            id: "biometrics",
+            label: "Біометрика",
+            requires: "biometrics",
+            unlocks: [],
+            text: "Шлюз у Сектор 2 не пропустить без токену доступу. Знайди нашого інформатора Кеша на площі — він тиняється біля терміналу, але до нього причепилися гіг-рейдери."
+          },
+          {
+            id: "prompt_inject",
+            label: "Промпт-ін'єкція",
+            requires: "prompt_inject",
+            unlocks: [],
+            text: "Старі декери з 90-х тягали касети й коаксіал. У 2026-му ти просто закидаєш отруєний контекст прямо в оптику дрона чи турелі — і залізяка стріляє по своїх."
+          }
+        ]
+      },
+      doc: {
+        name: "Док «Фірмвер»",
+        role: "Підпільний ріпердок · Без ліцензії",
+        portraitColor: "#10b981",
+        portraitAccent: "#f59e0b",
+        greeting: "Заходь під тент, доки камера на стовпі не зчитала твій gait-ID. Потрібна свіжа прошивка для суглобів чи нормальний кастет?",
+        keywords: [
+          {
+            id: "doc_shop",
+            label: "Відкрити клініку імплантів",
+            isAction: true,
+            requires: null,
+            unlocks: [],
+            text: "Давай подивимось, що витримає твоя нервова система.",
+            onSelect(state, bus) {
+              bus.emit("dialogue:close");
+              bus.emit("shop:open");
+            }
+          },
+          {
+            id: "cyberware_2026",
+            label: "Апгрейди 2026",
+            requires: null,
+            unlocks: [],
+            text: "Зараз ніхто не ставить дешевий хром, що іржавіє. Тільки кінетичні приводи, кераміка під шкіру та розгін рефлексів. Заробиш кредитів та Карми в бою — заходь."
+          }
+        ]
+      },
+      cache: {
+        name: "Інформатор «Кеш»",
+        role: "Екс-сисадмін · Вуличний хакер",
+        portraitColor: "#06b6d4",
+        portraitAccent: "#ef4444",
+        greeting: "Ей! Ці рейдери хотіли забрати мій Flipper-модуль! Дякую, якщо ти тут, щоб розібратися з ними... або вже розібрався.",
+        keywords: [
+          {
+            id: "cache_help",
+            label: "Прохід у Сектор 2",
+            requires: null,
+            unlocks: ["biometrics", "kuroda"],
+            text: "Дивись: якщо зачистиш площу від гіг-рейдерів, я передам тобі зламаний крипто-ключ від біометричного ліфта. Або можеш сам зламати термінал біля воріт!",
+            onSelect(state, bus) {
+              const alleyEnemies = state.entities.filter(e => e.zone === "alley" && e.team === "enemy" && e.hp > 0);
+              if (alleyEnemies.length === 0 && !state.flags.cacheRewarded) {
+                state.flags.cacheRewarded = true;
+                state.flags.hasSectorKey = true;
+                state.player.credits += 180;
+                state.player.karma += 2;
+                state.questText = "Ключ отримано! Йдіть до Східного Шлюзу в Сектор 2 («Транзит-Мережа»).";
+                bus.emit("state:toast", "Отримано Data-Key · +180 ₵ · +2 Карма");
+                bus.emit("quest:update");
+              } else if (alleyEnemies.length > 0) {
+                bus.emit("state:toast", `На вулиці ще ${alleyEnemies.length} ворогів!`);
+              }
+            }
+          },
+          {
+            id: "kuroda",
+            label: "Сховище Kuroda",
+            requires: "kuroda",
+            unlocks: [],
+            text: "Там усередині чергує «Агент-09» — важкий екзоскелет із регенеруючим щитом. Звичайні удари він тримає, тому бий важким пробоєм [K] або гаси його EMP [3]. І не забудь зламати турелі в залі!"
+          }
+        ]
+      }
+    }
+  };
+
+  /* ============================================================================
+   * MODULE 02: EVENT_BUS
+   * Dependencies: None
+   * Exports: createEventBus()
+   * Seam note: Pure pub/sub decoupler; replace with typed emitter in TS modules
+   * ========================================================================== */
+  function createEventBus() {
+    const listeners = new Map();
+    return {
+      on(event, fn) {
+        if (!listeners.has(event)) listeners.set(event, new Set());
+        listeners.get(event).add(fn);
+        return () => listeners.get(event)?.delete(fn);
+      },
+      emit(event, payload) {
+        const set = listeners.get(event);
+        if (!set) return;
+        for (const fn of set) fn(payload);
+      }
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 03: STATE_STORE
+   * Dependencies: CONFIG
+   * Exports: createStateStore({ config, bus })
+   * Seam note: Central state container + serialization seam
+   * ========================================================================== */
+  function createStateStore({ config, bus }) {
+    const SAVE_KEY = "shadowrun_2026_save_v1";
+
+    function createInitialState() {
+      return {
+        mode: "TITLE", // TITLE | PLAYING | DIALOGUE | HACKING | SHOP | PAUSED | GAMEOVER | VICTORY
+        zoneId: "alley",
+        time: 0,
+        hitStop: 0,
+        shakeTime: 0,
+        shakeMag: 0,
+        overclockTimer: 0,
+        questText: "Поговоріть з фіксером Мартою «Проксі» [E] або очистіть провулок.",
+        unlockedKeywords: ["contract", "doc_shop", "cyberware_2026", "cache_help"],
+        askedKeywords: [],
+        flags: {
+          gotContract: false,
+          cacheRewarded: false,
+          hasSectorKey: false,
+          transitGateOpen: false,
+          vaultGateOpen: false,
+          vaultTurretsHacked: false,
+          bossSpawned: false,
+          bossDefeated: false,
+          extracted: false
+        },
+        stats: {
+          kills: 0,
+          hacks: 0,
+          maxCombo: 0,
+          creditsEarned: 0
+        },
+        combo: {
+          count: 0,
+          timer: 0
+        },
+        shopPurchases: {},
+        camera: { x: 0, y: 0 },
+        player: {
+          id: "player",
+          zone: "alley",
+          x: 3.5,
+          y: 6.5,
+          z: 0,
+          vx: 0,
+          vy: 0,
+          vz: 0,
+          facingX: 1,
+          facingY: 0,
+          radius: 0.34,
+          hp: config.PLAYER_BASE.maxHp,
+          maxHp: config.PLAYER_BASE.maxHp,
+          ram: config.PLAYER_BASE.maxRam,
+          maxRam: config.PLAYER_BASE.maxRam,
+          ramRegenBonus: 0,
+          ammo: 12,
+          maxAmmo: config.PLAYER_BASE.ammoMax,
+          credits: 150,
+          karma: 0,
+          meleeBonus: 0,
+          gunBonus: 0,
+          action: "IDLE", // IDLE | RUN | ATTACK_1 | ATTACK_2 | ATTACK_3 | HEAVY | DASH | HURT | SHOOT
+          actionTimer: 0,
+          comboQueued: false,
+          dashCooldown: 0,
+          invulnTimer: 0,
+          hitFlash: 0,
+          animTime: 0,
+          skillCd: { inject: 0, overclock: 0, emp: 0 },
+          afterimages: []
+        },
+        entities: [],
+        projectiles: [],
+        particles: [],
+        floatTexts: [],
+        rainDrops: Array.from({ length: 85 }, () => ({
+          x: Math.random(),
+          y: Math.random(),
+          len: 12 + Math.random() * 14,
+          speed: 0.7 + Math.random() * 0.6
+        }))
+      };
+    }
+
+    let state = createInitialState();
+
+    function hasSave() {
+      try { return Boolean(localStorage.getItem(SAVE_KEY)); } catch { return false; }
+    }
+
+    function save() {
+      try {
+        const snapshot = {
+          zoneId: state.zoneId,
+          questText: state.questText,
+          unlockedKeywords: state.unlockedKeywords,
+          askedKeywords: state.askedKeywords,
+          flags: state.flags,
+          stats: state.stats,
+          shopPurchases: state.shopPurchases,
+          player: {
+            x: state.player.x,
+            y: state.player.y,
+            hp: state.player.hp,
+            maxHp: state.player.maxHp,
+            ram: state.player.ram,
+            maxRam: state.player.maxRam,
+            ramRegenBonus: state.player.ramRegenBonus,
+            ammo: state.player.ammo,
+            credits: state.player.credits,
+            karma: state.player.karma,
+            meleeBonus: state.player.meleeBonus,
+            gunBonus: state.player.gunBonus
+          }
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot));
+        bus.emit("state:toast", "Гру збережено в пам'ять");
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const snap = JSON.parse(raw);
+        state = createInitialState();
+        state.zoneId = snap.zoneId || "alley";
+        state.questText = snap.questText || state.questText;
+        state.unlockedKeywords = snap.unlockedKeywords || state.unlockedKeywords;
+        state.askedKeywords = snap.askedKeywords || [];
+        state.flags = { ...state.flags, ...(snap.flags || {}) };
+        state.stats = { ...state.stats, ...(snap.stats || {}) };
+        state.shopPurchases = snap.shopPurchases || {};
+        Object.assign(state.player, snap.player || {});
+        state.player.zone = state.zoneId;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return {
+      get() { return state; },
+      reset() { state = createInitialState(); return state; },
+      hasSave,
+      save,
+      load
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 04: INPUT_MANAGER
+   * Dependencies: None
+   * Exports: createInputManager({ canvas })
+   * Seam note: Isolates DOM keyboard/mouse + iframe postMessage bridge
+   * ========================================================================== */
+  function createInputManager({ canvas }) {
+    const down = new Set();
+    const justPressed = new Set();
+    const pointer = { screenX: 0, screenY: 0, leftJust: false, rightJust: false };
+
+    function normalizeCode(e) {
+      return e.code || e.key;
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const code = normalizeCode(e);
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code)) {
+        e.preventDefault();
+      }
+      if (!down.has(code)) justPressed.add(code);
+      down.add(code);
+    });
+
+    window.addEventListener("keyup", (e) => {
+      down.delete(normalizeCode(e));
+    });
+
+    window.addEventListener("blur", () => down.clear());
+
+    // Parent window bridge for nested iframe keyboard focus reliability
+    window.addEventListener("message", (ev) => {
+      const msg = ev.data;
+      if (!msg || typeof msg !== "object") return;
+      if (msg.type === "HOST_KEYDOWN" && msg.code) {
+        if (!down.has(msg.code)) justPressed.add(msg.code);
+        down.add(msg.code);
+      } else if (msg.type === "HOST_KEYUP" && msg.code) {
+        down.delete(msg.code);
+      }
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.screenX = e.clientX - rect.left;
+      pointer.screenY = e.clientY - rect.top;
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+      window.focus();
+      const rect = canvas.getBoundingClientRect();
+      pointer.screenX = e.clientX - rect.left;
+      pointer.screenY = e.clientY - rect.top;
+      if (e.button === 0) pointer.leftJust = true;
+      if (e.button === 2) pointer.rightJust = true;
+    });
+
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    return {
+      isDown(code) { return down.has(code); },
+      wasPressed(code) { return justPressed.has(code); },
+      getScreenMoveVector() {
+        let sx = 0, sy = 0;
+        if (down.has("KeyW") || down.has("ArrowUp")) sy -= 1;
+        if (down.has("KeyS") || down.has("ArrowDown")) sy += 1;
+        if (down.has("KeyA") || down.has("ArrowLeft")) sx -= 1;
+        if (down.has("KeyD") || down.has("ArrowRight")) sx += 1;
+        const len = Math.hypot(sx, sy);
+        return len > 0 ? { x: sx / len, y: sy / len } : { x: 0, y: 0 };
+      },
+      pointer,
+      endFrame() {
+        justPressed.clear();
+        pointer.leftJust = false;
+        pointer.rightJust = false;
+      }
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 05: AUDIO_SYNTH
+   * Dependencies: EVENT_BUS
+   * Exports: createAudioSynth({ bus })
+   * Seam note: Pure Web Audio procedural synth subscribed to EventBus
+   * ========================================================================== */
+  function createAudioSynth({ bus }) {
+    let ctx = null;
+    let enabled = true;
+
+    function ensureCtx() {
+      if (!enabled) return null;
+      if (!ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) ctx = new AudioCtx();
+      }
+      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+      return ctx;
+    }
+
+    function tone({ freq = 220, endFreq = 80, dur = 0.1, type = "triangle", vol = 0.12 }) {
+      const c = ensureCtx();
+      if (!c) return;
+      const now = c.currentTime;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      if (endFreq !== freq) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + dur);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(now);
+      osc.stop(now + dur + 0.01);
+    }
+
+    bus.on("combat:hit", (p) => {
+      if (p?.heavy) {
+        tone({ freq: 150, endFreq: 42, dur: 0.16, type: "sawtooth", vol: 0.18 });
+      } else {
+        tone({ freq: 240, endFreq: 75, dur: 0.08, type: "triangle", vol: 0.12 });
+      }
+    });
+    bus.on("combat:dash", () => tone({ freq: 380, endFreq: 140, dur: 0.1, type: "sine", vol: 0.08 }));
+    bus.on("combat:shoot", () => tone({ freq: 720, endFreq: 160, dur: 0.09, type: "square", vol: 0.09 }));
+    bus.on("combat:emp", () => tone({ freq: 520, endFreq: 55, dur: 0.3, type: "sawtooth", vol: 0.16 }));
+    bus.on("combat:overclock", () => tone({ freq: 260, endFreq: 680, dur: 0.25, type: "sine", vol: 0.11 }));
+    bus.on("combat:inject", () => {
+      tone({ freq: 620, endFreq: 940, dur: 0.08, type: "square", vol: 0.07 });
+      setTimeout(() => tone({ freq: 940, endFreq: 480, dur: 0.1, type: "triangle", vol: 0.07 }), 70);
+    });
+    bus.on("hack:success", () => {
+      tone({ freq: 440, endFreq: 440, dur: 0.09, type: "sine", vol: 0.11 });
+      setTimeout(() => tone({ freq: 660, endFreq: 660, dur: 0.14, type: "sine", vol: 0.12 }), 90);
+    });
+    bus.on("hack:fail", () => tone({ freq: 180, endFreq: 70, dur: 0.24, type: "sawtooth", vol: 0.14 }));
+    bus.on("pickup:reward", () => tone({ freq: 580, endFreq: 880, dur: 0.12, type: "triangle", vol: 0.09 }));
+
+    return {
+      isEnabled() { return enabled; },
+      toggle() {
+        enabled = !enabled;
+        if (enabled) ensureCtx();
+        return enabled;
+      },
+      unlock: ensureCtx
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 06: WORLD_MAP
+   * Dependencies: CONFIG, STATE_STORE, EVENT_BUS
+   * Exports: createWorldMap({ config, store, bus })
+   * Seam note: Tilemaps, isometric coordinate projections, props, zone transitions
+   * ========================================================================== */
+  function createWorldMap({ config, store, bus }) {
+    // Tile legend: 0=asphalt, 1=sidewalk, 2=conductive puddle, 3=wall/obstacle, 4=hazard stripe, 5=extraction
+    const ZONES = {
+      alley: {
+        id: "alley",
+        title: "Сектор 1 · Провулок «Синтез-7»",
+        width: 16,
+        height: 12,
+        signs: [
+          { x: 3.5, y: 1.0, text: "АПТЕКА-26 // ФІРМВЕР", color: "#10b981" },
+          { x: 10.5, y: 1.0, text: "ШІ-КРЕДИТ 0.4с", color: "#f59e0b" }
+        ],
+        grid: [
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,1,1,1,1,1,1,3,1,1,1,1,1,1,1,3],
+          [3,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3],
+          [3,1,0,0,2,2,0,0,0,0,2,2,0,0,1,3],
+          [3,1,0,0,2,0,0,3,3,0,0,0,0,0,4,4],
+          [3,1,0,0,0,0,0,0,0,0,0,0,0,0,4,4],
+          [3,1,0,0,0,0,0,0,0,0,0,2,2,0,1,3],
+          [3,1,0,0,0,3,0,0,0,0,0,0,0,0,1,3],
+          [3,1,0,0,0,0,0,0,2,2,0,0,0,0,1,3],
+          [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+        ],
+        npcs: [
+          { id: "marta", x: 2.3, y: 2.0, name: "Марта «Проксі»", tag: "Фіксер", color: "#f59e0b" },
+          { id: "doc", x: 5.2, y: 1.9, name: "Док «Фірмвер»", tag: "Імпланти", color: "#10b981" },
+          { id: "cache", x: 12.2, y: 2.0, name: "Кеш", tag: "Хакер", color: "#06b6d4" }
+        ],
+        terminals: [
+          { id: "vending_alley", x: 8.6, y: 1.7, type: "VENDING", label: "Автомат рамену [E] · 30 ₵" },
+          { id: "gate_alley_transit", x: 14.3, y: 4.5, type: "PORTAL", targetZone: "transit", spawnX: 1.6, spawnY: 5.0, label: "Шлюз у Сектор 2 [E]" }
+        ],
+        crates: [
+          { id: "crate_a1", x: 9.0, y: 5.5 },
+          { id: "crate_a2", x: 6.2, y: 8.2 }
+        ],
+        spawns: [
+          { kind: "punk", x: 9.4, y: 3.6 },
+          { kind: "punk", x: 10.5, y: 6.8 },
+          { kind: "drone", x: 11.8, y: 4.4 },
+          { kind: "enforcer", x: 12.6, y: 7.2 }
+        ]
+      },
+      transit: {
+        id: "transit",
+        title: "Сектор 2 · Хаб «Транзит-Мережа»",
+        width: 16,
+        height: 12,
+        signs: [
+          { x: 5.5, y: 1.0, text: "ZERO-TRUST ШЛЮЗ", color: "#06b6d4" },
+          { x: 12.0, y: 1.0, text: "KURODA-BIO ТРАНЗИТ", color: "#ef4444" }
+        ],
+        grid: [
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+          [3,1,0,0,0,0,0,3,3,0,0,0,0,0,1,3],
+          [3,1,0,2,2,0,0,0,0,0,0,2,2,0,1,3],
+          [4,4,0,0,0,0,0,0,0,0,0,0,0,0,4,4],
+          [4,4,0,0,0,3,0,0,0,3,0,0,0,0,4,4],
+          [3,1,0,0,0,0,0,2,2,0,0,0,0,0,1,3],
+          [3,1,0,0,0,0,0,0,0,0,0,0,3,0,1,3],
+          [3,1,0,2,2,0,0,0,0,0,0,0,0,0,1,3],
+          [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+        ],
+        npcs: [],
+        terminals: [
+          { id: "portal_back_alley", x: 1.1, y: 4.5, type: "PORTAL", targetZone: "alley", spawnX: 13.7, spawnY: 4.8, label: "Назад у Провулок [E]" },
+          { id: "hack_crypto_transit", x: 4.2, y: 1.7, type: "HACK_CRYPTO", label: "Крипто-вузол (+160 ₵) [E]" },
+          { id: "hack_vault_gate", x: 13.2, y: 3.4, type: "HACK_GATE", gateFlag: "vaultGateOpen", label: "Злам замка Сховища [E]" },
+          { id: "portal_to_vault", x: 14.3, y: 4.5, type: "PORTAL", targetZone: "vault", spawnX: 1.8, spawnY: 5.0, requiresFlag: "vaultGateOpen", label: "У Дата-Сховище Kuroda [E]" }
+        ],
+        crates: [
+          { id: "crate_t1", x: 6.8, y: 4.8 },
+          { id: "crate_t2", x: 10.8, y: 7.4 }
+        ],
+        spawns: [
+          { kind: "shield", x: 7.2, y: 5.5 },
+          { kind: "drone", x: 8.8, y: 3.8 },
+          { kind: "enforcer", x: 11.2, y: 6.0 },
+          { kind: "turret", x: 12.2, y: 2.6 },
+          { kind: "punk", x: 6.0, y: 7.6 }
+        ]
+      },
+      vault: {
+        id: "vault",
+        title: "Сектор 3 · Сховище «Kuroda Edge»",
+        width: 16,
+        height: 12,
+        signs: [
+          { x: 7.5, y: 1.0, text: "ПРОЄКТ ХІМЕРА // ЯДРО", color: "#ef4444" }
+        ],
+        grid: [
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+          [3,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3],
+          [3,1,0,3,0,0,2,2,2,0,0,3,0,0,1,3],
+          [4,4,0,0,0,0,0,0,0,0,0,0,0,0,1,3],
+          [4,4,0,0,0,0,0,0,0,0,0,0,5,5,1,3],
+          [3,1,0,0,0,0,0,0,0,0,0,0,5,5,1,3],
+          [3,1,0,3,0,0,2,2,2,0,0,3,0,0,1,3],
+          [3,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3],
+          [3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+          [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+        ],
+        npcs: [],
+        terminals: [
+          { id: "portal_back_transit", x: 1.1, y: 4.5, type: "PORTAL", targetZone: "transit", spawnX: 13.5, spawnY: 4.8, label: "Назад у Транзит [E]" },
+          { id: "hack_vault_turrets", x: 4.6, y: 1.8, type: "HACK_TURRETS", label: "Перехопити турелі залу [E]" },
+          { id: "extract_chimera", x: 12.8, y: 5.5, type: "EXTRACT", label: "Завантажити ядро «Хімера» [E]" }
+        ],
+        crates: [
+          { id: "crate_v1", x: 5.5, y: 5.5 },
+          { id: "crate_v2", x: 9.8, y: 3.4 },
+          { id: "crate_v3", x: 9.8, y: 7.8 }
+        ],
+        spawns: [
+          { kind: "turret", x: 11.2, y: 2.3 },
+          { kind: "turret", x: 11.2, y: 8.4 },
+          { kind: "drone", x: 8.0, y: 4.0 },
+          { kind: "boss", x: 10.6, y: 5.4 }
+        ]
+      }
+    };
+
+    const usedTerminals = new Set();
+
+    function worldToScreen(wx, wy, cam) {
+      const sx = (wx - wy) * (config.TILE_W * 0.5);
+      const sy = (wx + wy) * (config.TILE_H * 0.5);
+      return { x: sx - cam.x, y: sy - cam.y };
+    }
+
+    function screenToWorld(sx, sy, cam) {
+      const rx = sx + cam.x;
+      const ry = sy + cam.y;
+      const wx = (rx / (config.TILE_W * 0.5) + ry / (config.TILE_H * 0.5)) * 0.5;
+      const wy = (ry / (config.TILE_H * 0.5) - rx / (config.TILE_W * 0.5)) * 0.5;
+      return { x: wx, y: wy };
+    }
+
+    function getTile(zoneId, tx, ty) {
+      const z = ZONES[zoneId];
+      if (!z) return 3;
+      const ix = Math.floor(tx);
+      const iy = Math.floor(ty);
+      if (iy < 0 || iy >= z.height || ix < 0 || ix >= z.width) return 3;
+      return z.grid[iy][ix];
+    }
+
+    function isSolid(zoneId, wx, wy) {
+      return getTile(zoneId, wx, wy) === 3;
+    }
+
+    function resolveCollision(entity) {
+      const r = entity.radius || 0.32;
+      const zId = entity.zone;
+      const pts = [
+        [entity.x - r, entity.y - r],
+        [entity.x + r, entity.y - r],
+        [entity.x - r, entity.y + r],
+        [entity.x + r, entity.y + r]
+      ];
+      for (const [px, py] of pts) {
+        if (isSolid(zId, px, py)) {
+          const cx = Math.floor(px) + 0.5;
+          const cy = Math.floor(py) + 0.5;
+          const dx = entity.x - cx;
+          const dy = entity.y - cy;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            entity.x = cx + Math.sign(dx || 1) * (0.5 + r);
+          } else {
+            entity.y = cy + Math.sign(dy || 1) * (0.5 + r);
+          }
+        }
+      }
+      const z = ZONES[zId];
+      entity.x = Math.max(1.1, Math.min(z.width - 1.2, entity.x));
+      entity.y = Math.max(1.1, Math.min(z.height - 1.2, entity.y));
+    }
+
+    function spawnZoneEntities(zoneId, force = false) {
+      const state = store.get();
+      const z = ZONES[zoneId];
+      if (!force && state.entities.some(e => e.zone === zoneId && e._spawned)) return;
+
+      // Crates
+      for (const c of z.crates) {
+        if (!state.entities.some(e => e.id === c.id)) {
+          state.entities.push({
+            id: c.id,
+            zone: zoneId,
+            kind: "crate",
+            team: "neutral",
+            x: c.x,
+            y: c.y,
+            z: 0,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            radius: 0.38,
+            hp: 24,
+            maxHp: 24,
+            hitFlash: 0,
+            _spawned: true
+          });
+        }
+      }
+
+      // Enemies
+      z.spawns.forEach((sp, idx) => {
+        const uid = `${zoneId}_en_${idx}`;
+        if (sp.kind === "boss" && state.flags.bossDefeated) return;
+        if (state.entities.some(e => e.id === uid)) return;
+        const arch = makeEnemyArchetype(uid, zoneId, sp.kind, sp.x, sp.y);
+        arch._spawned = true;
+        state.entities.push(arch);
+      });
+    }
+
+    function makeEnemyArchetype(id, zone, kind, x, y) {
+      const base = {
+        id, zone, kind, team: "enemy",
+        x, y, z: kind === "drone" ? 0.55 : 0,
+        vx: 0, vy: 0, vz: 0,
+        facingX: -1, facingY: 0,
+        radius: kind === "boss" ? 0.52 : 0.34,
+        aiState: "PATROL",
+        aiTimer: Math.random() * 1.2,
+        hackedTimer: 0,
+        stunTimer: 0,
+        hitFlash: 0,
+        shield: 0,
+        maxShield: 0,
+        animTime: Math.random() * 10
+      };
+      if (kind === "punk") return { ...base, name: "Гіг-рейдер", hp: 54, maxHp: 54, speed: 135, dmg: 11, credits: 28, karma: 1 };
+      if (kind === "enforcer") return { ...base, name: "Екзо-боєць", hp: 92, maxHp: 92, speed: 105, dmg: 18, credits: 45, karma: 1 };
+      if (kind === "shield") return { ...base, name: "Щитовик Kuroda", hp: 85, maxHp: 85, shield: 45, maxShield: 45, speed: 92, dmg: 15, credits: 55, karma: 2 };
+      if (kind === "drone") return { ...base, name: "FPV Дрон", hp: 44, maxHp: 44, speed: 145, dmg: 12, credits: 36, karma: 1 };
+      if (kind === "turret") return { ...base, name: "Турель 6G", hp: 75, maxHp: 75, speed: 0, dmg: 14, credits: 50, karma: 2 };
+      return {
+        ...base,
+        name: "АГЕНТ-09 // ЕКЗО-СТРАЖ",
+        hp: 380,
+        maxHp: 380,
+        shield: 90,
+        maxShield: 90,
+        speed: 115,
+        dmg: 24,
+        credits: 350,
+        karma: 6,
+        phase: 1
+      };
+    }
+
+    function changeZone(targetZone, sx, sy) {
+      const state = store.get();
+      state.zoneId = targetZone;
+      state.player.zone = targetZone;
+      state.player.x = sx;
+      state.player.y = sy;
+      state.player.vx = 0;
+      state.player.vy = 0;
+      state.projectiles = [];
+      spawnZoneEntities(targetZone);
+      if (targetZone === "transit" && state.questText.includes("Сектор 2")) {
+        state.questText = "Зламайте термінал Сховища [E] та знищіть охорону Kuroda-Bio.";
+      }
+      if (targetZone === "vault") {
+        state.flags.bossSpawned = true;
+        state.questText = "Переможіть АГЕНТА-09 та завантажте дані «Хімери» на платформі праворуч!";
+      }
+      bus.emit("zone:change", ZONES[targetZone]);
+      bus.emit("quest:update");
+    }
+
+    function findNearbyInteractable() {
+      const state = store.get();
+      const z = ZONES[state.zoneId];
+      const p = state.player;
+      let best = null;
+      let bestDist = 1.65;
+
+      for (const npc of z.npcs) {
+        const d = Math.hypot(npc.x - p.x, npc.y - p.y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = { kind: "NPC", data: npc, label: `Говорити: ${npc.name} [E]`, x: npc.x, y: npc.y };
+        }
+      }
+      for (const term of z.terminals) {
+        if (usedTerminals.has(term.id)) continue;
+        const d = Math.hypot(term.x - p.x, term.y - p.y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = { kind: "TERMINAL", data: term, label: term.label, x: term.x, y: term.y };
+        }
+      }
+      return best;
+    }
+
+    return {
+      ZONES,
+      usedTerminals,
+      getCurrentZone() { return ZONES[store.get().zoneId]; },
+      worldToScreen,
+      screenToWorld,
+      getTile,
+      isSolid,
+      resolveCollision,
+      spawnZoneEntities,
+      makeEnemyArchetype,
+      changeZone,
+      findNearbyInteractable
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 07: COMBAT_ENGINE
+   * Dependencies: CONFIG, STATE_STORE, EVENT_BUS, WORLD_MAP, INPUT_MANAGER
+   * Exports: createCombatEngine({ config, store, bus, world, input })
+   * Seam note: Beat'em up kinetic melee combo, dash i-frames, projectiles, 2026 hacks
+   * ========================================================================== */
+  function createCombatEngine({ config, store, bus, world, input }) {
+    function spawnFloatText(x, y, z, text, color = "#f8fafc", big = false) {
+      store.get().floatTexts.push({ x, y, z, text, color, life: 0.85, maxLife: 0.85, big });
+    }
+
+    function spawnSparks(x, y, z, color, count = 8, speed = 2.8) {
+      const st = store.get();
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (0.4 + Math.random() * 0.8) * speed;
+        st.particles.push({
+          x, y, z: z + 0.2,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s,
+          vz: 1.5 + Math.random() * 2.5,
+          life: 0.25 + Math.random() * 0.25,
+          maxLife: 0.5,
+          color,
+          size: 2 + Math.random() * 2.5
+        });
+      }
+    }
+
+    function triggerShake(mag, time) {
+      const st = store.get();
+      st.shakeMag = Math.max(st.shakeMag, mag);
+      st.shakeTime = Math.max(st.shakeTime, time);
+    }
+
+    function addCombo() {
+      const st = store.get();
+      st.combo.count += 1;
+      st.combo.timer = 2.6;
+      if (st.combo.count > st.stats.maxCombo) st.stats.maxCombo = st.combo.count;
+      bus.emit("combat:combo", st.combo.count);
+    }
+
+    function damageEntity(target, rawDmg, knockDirX, knockDirY, { heavy = false, emp = false, isPlayerSource = true } = {}) {
+      const st = store.get();
+      if (!target || target.hp <= 0) return;
+
+      // Crate explosion!
+      if (target.kind === "crate") {
+        target.hp -= rawDmg;
+        target.hitFlash = 0.14;
+        spawnSparks(target.x, target.y, 0.2, "#f59e0b", 10, 3.2);
+        if (target.hp <= 0) {
+          explodeCrate(target);
+        }
+        return;
+      }
+
+      // Shield mitigation for Riot Shield / Boss
+      let dmg = rawDmg;
+      if (target.shield > 0) {
+        if (heavy || emp) {
+          const shieldDmg = emp ? dmg * 1.8 : dmg * 1.4;
+          target.shield = Math.max(0, target.shield - shieldDmg);
+          spawnFloatText(target.x, target.y, 0.9, target.shield === 0 ? "ЩИТ ЗЛАМАНО!" : `ЩИТ -${Math.round(shieldDmg)}`, "#22d3ee", true);
+          dmg = Math.round(dmg * 0.55);
+        } else {
+          // Light attack partially blocked
+          target.shield = Math.max(0, target.shield - Math.round(dmg * 0.35));
+          dmg = Math.max(3, Math.round(dmg * 0.3));
+          spawnFloatText(target.x, target.y, 0.85, `БЛОК -${dmg}`, "#94a3b8");
+          target.hitFlash = 0.09;
+          bus.emit("combat:hit", { heavy: false });
+          return;
+        }
+      }
+
+      // Combo damage bonus for player
+      if (isPlayerSource && st.combo.count >= 5) {
+        dmg = Math.round(dmg * (1 + Math.min(0.4, st.combo.count * 0.02)));
+      }
+
+      target.hp -= dmg;
+      target.hitFlash = 0.14;
+      if (target.kind !== "turret") {
+        const kbScale = heavy ? 5.2 : 2.6;
+        target.vx += knockDirX * kbScale;
+        target.vy += knockDirY * kbScale;
+        if (heavy && target.kind !== "boss") target.vz = Math.max(target.vz, 3.2);
+      }
+
+      if (isPlayerSource) {
+        addCombo();
+        st.player.ram = Math.min(st.player.maxRam, st.player.ram + (heavy ? 5 : 2.5));
+      }
+
+      spawnFloatText(target.x, target.y, (target.z || 0) + 0.7, `-${dmg}`, heavy ? "#f59e0b" : "#f8fafc", heavy);
+      spawnSparks(target.x, target.y, target.z || 0.2, heavy ? "#f59e0b" : "#22d3ee", heavy ? 12 : 6);
+      bus.emit("combat:hit", { heavy });
+
+      if (heavy) {
+        st.hitStop = 0.045;
+        triggerShake(6, 0.14);
+      }
+
+      if (target.hp <= 0) {
+        handleEnemyKilled(target);
+      }
+    }
+
+    function explodeCrate(crate) {
+      const st = store.get();
+      spawnFloatText(crate.x, crate.y, 0.8, "ВИБУХ Li-Ion!", "#f59e0b", true);
+      spawnSparks(crate.x, crate.y, 0.4, "#ef4444", 24, 5.0);
+      triggerShake(9, 0.22);
+      bus.emit("combat:emp");
+      for (const e of st.entities) {
+        if (e.zone !== crate.zone || e.hp <= 0 || e.id === crate.id) continue;
+        const d = Math.hypot(e.x - crate.x, e.y - crate.y);
+        if (d < 2.6) {
+          const nx = (e.x - crate.x) / (d || 1);
+          const ny = (e.y - crate.y) / (d || 1);
+          damageEntity(e, 55, nx, ny, { heavy: true, emp: true });
+        }
+      }
+    }
+
+    function handleEnemyKilled(e) {
+      const st = store.get();
+      const p = st.player;
+      st.stats.kills += 1;
+      const bonusCred = Math.round((e.credits || 25) * (st.combo.count >= 6 ? 1.25 : 1));
+      p.credits += bonusCred;
+      p.karma += (e.karma || 1);
+      st.stats.creditsEarned += bonusCred;
+      p.ammo = Math.min(p.maxAmmo, p.ammo + (e.kind === "drone" ? 3 : 2));
+      if (Math.random() < 0.35) p.hp = Math.min(p.maxHp, p.hp + 12);
+
+      spawnFloatText(e.x, e.y, 1.0, `+${bonusCred} ₵`, "#10b981", false);
+      bus.emit("pickup:reward");
+      bus.emit("entity:killed", e);
+
+      if (e.kind === "boss") {
+        st.flags.bossDefeated = true;
+        st.hitStop = 0.12;
+        triggerShake(12, 0.35);
+        st.questText = "АГЕНТ-09 знищений! Підійдіть до платформи праворуч [E], щоб завантажити ядро «Хімера».";
+        bus.emit("state:toast", "БОС ЗНИЩЕНИЙ! Завантажте ядро «Хімера»!");
+        bus.emit("quest:update");
+      }
+    }
+
+    function damagePlayer(rawDmg, kx, ky) {
+      const st = store.get();
+      const p = st.player;
+      if (p.invulnTimer > 0 || st.mode !== "PLAYING") return;
+      p.hp = Math.max(0, p.hp - rawDmg);
+      p.invulnTimer = 0.55;
+      p.hitFlash = 0.2;
+      p.vx += kx * 3.2;
+      p.vy += ky * 3.2;
+      st.combo.count = 0;
+      triggerShake(7, 0.18);
+      spawnFloatText(p.x, p.y, 0.9, `-${rawDmg}`, "#ef4444", true);
+      bus.emit("combat:hit", { heavy: true });
+
+      if (p.hp <= 0) {
+        st.mode = "GAMEOVER";
+        bus.emit("game:over");
+      }
+    }
+
+    function performMeleeSweep(isHeavy, step = 1) {
+      const st = store.get();
+      const p = st.player;
+      const baseDmg = isHeavy ? config.PLAYER_BASE.heavyDmg : config.PLAYER_BASE.lightDmg + (step === 3 ? 10 : 0);
+      const dmg = baseDmg + p.meleeBonus;
+      const reach = isHeavy ? 1.85 : (step === 3 ? 1.75 : 1.55);
+
+      for (const e of st.entities) {
+        if (e.zone !== st.zoneId || e.hp <= 0 || e.team === "ally") continue;
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > reach) continue;
+        const dot = (dx * p.facingX + dy * p.facingY) / (dist || 1);
+        if (dot > 0.15 || dist < 0.75) {
+          const nx = dx / (dist || 1);
+          const ny = dy / (dist || 1);
+          damageEntity(e, dmg, nx, ny, { heavy: isHeavy || step === 3 });
+        }
+      }
+    }
+
+    function fireSmartPistol() {
+      const st = store.get();
+      const p = st.player;
+      if (p.ammo <= 0) {
+        bus.emit("state:toast", "Немає набоїв для смарт-пістолета!");
+        return false;
+      }
+      p.ammo -= 1;
+      // Smart-lock onto closest visible enemy near facing or mouse aim
+      let dirX = p.facingX;
+      let dirY = p.facingY;
+      let bestDist = 7.5;
+      for (const e of st.entities) {
+        if (e.zone !== st.zoneId || e.hp <= 0 || e.team !== "enemy") continue;
+        const d = Math.hypot(e.x - p.x, e.y - p.y);
+        if (d < bestDist) {
+          bestDist = d;
+          dirX = (e.x - p.x) / (d || 1);
+          dirY = (e.y - p.y) / (d || 1);
+        }
+      }
+      p.facingX = dirX;
+      p.facingY = dirY;
+      st.projectiles.push({
+        zone: st.zoneId,
+        team: "player",
+        x: p.x + dirX * 0.4,
+        y: p.y + dirY * 0.4,
+        z: 0.45,
+        vx: dirX * 14.5,
+        vy: dirY * 14.5,
+        dmg: config.PLAYER_BASE.gunDmg + p.gunBonus,
+        life: 0.75,
+        color: "#22d3ee"
+      });
+      bus.emit("combat:shoot");
+      return true;
+    }
+
+    function useQuickHack(skillKey) {
+      const st = store.get();
+      const p = st.player;
+      if (st.mode !== "PLAYING") return;
+      const spec = config.SKILLS[skillKey];
+      if (!spec) return;
+      if (p.skillCd[skillKey] > 0) {
+        bus.emit("state:toast", "Навичка ще перезаряджається");
+        return;
+      }
+      if (p.ram < spec.cost) {
+        bus.emit("state:toast", "Недостатньо RAM!");
+        return;
+      }
+      p.ram -= spec.cost;
+      p.skillCd[skillKey] = spec.cooldown;
+
+      if (skillKey === "inject") {
+        // Hijack nearest enemy/drone/turret
+        let target = null;
+        let best = 7.0;
+        for (const e of st.entities) {
+          if (e.zone !== st.zoneId || e.hp <= 0 || e.team !== "enemy" || e.kind === "crate") continue;
+          const d = Math.hypot(e.x - p.x, e.y - p.y);
+          if (d < best) { best = d; target = e; }
+        }
+        if (target) {
+          if (target.kind === "drone" || target.kind === "turret") {
+            target.team = "ally";
+            target.hackedTimer = 9.0;
+            spawnFloatText(target.x, target.y, 1.0, "ШІ ПЕРЕХОПЛЕНО!", "#06b6d4", true);
+          } else {
+            target.stunTimer = 3.6;
+            damageEntity(target, 16, 0, 0, { emp: true });
+            spawnFloatText(target.x, target.y, 1.0, "AR-ГАЛЮЦИНАЦІЯ!", "#06b6d4", true);
+          }
+          spawnSparks(target.x, target.y, 0.5, "#06b6d4", 16, 3.8);
+        } else {
+          spawnFloatText(p.x, p.y, 1.0, "СКАН: ЦІЛІ НЕМАЄ", "#94a3b8");
+        }
+        bus.emit("combat:inject");
+      } else if (skillKey === "overclock") {
+        st.overclockTimer = spec.duration;
+        spawnFloatText(p.x, p.y, 1.0, "РОЗГІН-26 // BULLET-TIME", "#f59e0b", true);
+        bus.emit("combat:overclock");
+      } else if (skillKey === "emp") {
+        bus.emit("combat:emp");
+        triggerShake(8, 0.2);
+        spawnSparks(p.x, p.y, 0.25, "#22d3ee", 26, 5.2);
+        const onPuddle = world.getTile(st.zoneId, p.x, p.y) === 2;
+        const radiusTiles = onPuddle ? 4.4 : 3.1;
+        for (const e of st.entities) {
+          if (e.zone !== st.zoneId || e.hp <= 0 || e.team === "ally") continue;
+          const d = Math.hypot(e.x - p.x, e.y - p.y);
+          if (d <= radiusTiles) {
+            const nx = (e.x - p.x) / (d || 1);
+            const ny = (e.y - p.y) / (d || 1);
+            const bonus = (e.kind === "drone" || e.kind === "turret") ? 22 : 0;
+            e.stunTimer = Math.max(e.stunTimer || 0, 1.8);
+            damageEntity(e, spec.dmg + bonus, nx, ny, { heavy: true, emp: true });
+          }
+        }
+        spawnFloatText(p.x, p.y, 1.1, onPuddle ? "EMP ПО КАЛЮЖІ!" : "SUB-GHz EMP!", "#22d3ee", true);
+      }
+    }
+
+    function update(dt) {
+      const st = store.get();
+      const p = st.player;
+
+      if (st.overclockTimer > 0) st.overclockTimer = Math.max(0, st.overclockTimer - dt);
+      const playerDt = st.overclockTimer > 0 ? dt * 1.42 : dt;
+
+      // Cooldowns & regen
+      p.ram = Math.min(p.maxRam, p.ram + (config.PLAYER_BASE.ramRegen + p.ramRegenBonus) * dt);
+      for (const k of Object.keys(p.skillCd)) {
+        if (p.skillCd[k] > 0) p.skillCd[k] = Math.max(0, p.skillCd[k] - dt);
+      }
+      if (p.dashCooldown > 0) p.dashCooldown = Math.max(0, p.dashCooldown - dt);
+      if (p.invulnTimer > 0) p.invulnTimer = Math.max(0, p.invulnTimer - dt);
+      if (p.hitFlash > 0) p.hitFlash = Math.max(0, p.hitFlash - dt);
+
+      if (st.combo.timer > 0) {
+        st.combo.timer -= dt;
+        if (st.combo.timer <= 0) st.combo.count = 0;
+      }
+
+      // Quick hacks via 1, 2, 3
+      if (input.wasPressed("Digit1")) useQuickHack("inject");
+      if (input.wasPressed("Digit2")) useQuickHack("overclock");
+      if (input.wasPressed("Digit3")) useQuickHack("emp");
+
+      // Screen-space movement mapped cleanly to isometric world-space
+      const mv = input.getScreenMoveVector();
+      const worldDirX = (mv.x / 32 + mv.y / 16) * 0.5;
+      const worldDirY = (mv.y / 16 - mv.x / 32) * 0.5;
+      const wLen = Math.hypot(worldDirX, worldDirY);
+      const normX = wLen > 0 ? worldDirX / wLen : 0;
+      const normY = wLen > 0 ? worldDirY / wLen : 0;
+
+      // Action triggers
+      const wantAttack = input.wasPressed("KeyJ") || input.pointer.leftJust;
+      const wantHeavy = input.wasPressed("KeyK") || input.pointer.rightJust;
+      const wantShoot = input.wasPressed("KeyL") || input.wasPressed("KeyQ");
+      const wantDash = input.wasPressed("Space") || input.wasPressed("ShiftLeft") || input.wasPressed("ShiftRight");
+
+      if (wantDash && p.dashCooldown <= 0 && p.action !== "DASH") {
+        p.action = "DASH";
+        p.actionTimer = config.PLAYER_BASE.dashDuration;
+        p.dashCooldown = config.PLAYER_BASE.dashCooldown;
+        p.invulnTimer = Math.max(p.invulnTimer, 0.24);
+        const dx = wLen > 0 ? normX : p.facingX;
+        const dy = wLen > 0 ? normY : p.facingY;
+        p.facingX = dx;
+        p.facingY = dy;
+        p.vx = dx * (config.PLAYER_BASE.dashSpeed / 64);
+        p.vy = dy * (config.PLAYER_BASE.dashSpeed / 64);
+        bus.emit("combat:dash");
+      }
+
+      const isAttacking = p.action.startsWith("ATTACK_") || p.action === "HEAVY";
+      if (wantAttack) {
+        if (!isAttacking && p.action !== "DASH") {
+          p.action = "ATTACK_1";
+          p.actionTimer = 0.19;
+          p.comboQueued = false;
+          p.vx += p.facingX * 2.2;
+          p.vy += p.facingY * 2.2;
+          performMeleeSweep(false, 1);
+        } else if (isAttacking && p.actionTimer < 0.14) {
+          p.comboQueued = true;
+        }
+      } else if (wantHeavy && p.action !== "DASH" && p.action !== "HEAVY") {
+        p.action = "HEAVY";
+        p.actionTimer = 0.3;
+        p.vx += p.facingX * 3.2;
+        p.vy += p.facingY * 3.2;
+        performMeleeSweep(true, 3);
+      } else if (wantShoot && p.action !== "DASH") {
+        if (fireSmartPistol()) {
+          p.action = "SHOOT";
+          p.actionTimer = 0.14;
+        }
+      }
+
+      // Action progression
+      if (p.actionTimer > 0) {
+        p.actionTimer -= playerDt;
+        if (p.action === "DASH" || st.overclockTimer > 0) {
+          p.afterimages.push({ x: p.x, y: p.y, z: p.z, alpha: 0.55 });
+        }
+        if (p.actionTimer <= 0) {
+          if (p.comboQueued && p.action === "ATTACK_1") {
+            p.action = "ATTACK_2";
+            p.actionTimer = 0.2;
+            p.comboQueued = false;
+            p.vx += p.facingX * 2.5;
+            p.vy += p.facingY * 2.5;
+            performMeleeSweep(false, 2);
+          } else if (p.comboQueued && p.action === "ATTACK_2") {
+            p.action = "ATTACK_3";
+            p.actionTimer = 0.26;
+            p.comboQueued = false;
+            p.vx += p.facingX * 3.4;
+            p.vy += p.facingY * 3.4;
+            performMeleeSweep(false, 3);
+          } else {
+            p.action = "IDLE";
+            p.comboQueued = false;
+          }
+        }
+      }
+
+      // Locomotion when not locked in dash/attack
+      if (p.action === "IDLE" || p.action === "RUN") {
+        if (wLen > 0) {
+          p.action = "RUN";
+          const speedTiles = (config.PLAYER_BASE.speed / 58);
+          p.vx = normX * speedTiles;
+          p.vy = normY * speedTiles;
+          p.facingX = normX;
+          p.facingY = normY;
+        } else {
+          p.action = "IDLE";
+          p.vx *= 0.65;
+          p.vy *= 0.65;
+        }
+      } else {
+        p.vx *= 0.88;
+        p.vy *= 0.88;
+      }
+
+      p.x += p.vx * playerDt;
+      p.y += p.vy * playerDt;
+      p.animTime += playerDt * (p.action === "RUN" ? 10 : 4);
+      world.resolveCollision(p);
+
+      // Update afterimages
+      for (let i = p.afterimages.length - 1; i >= 0; i--) {
+        p.afterimages[i].alpha -= dt * 2.6;
+        if (p.afterimages[i].alpha <= 0) p.afterimages.splice(i, 1);
+      }
+
+      // Projectiles
+      for (let i = st.projectiles.length - 1; i >= 0; i--) {
+        const pr = st.projectiles[i];
+        if (pr.zone !== st.zoneId) { st.projectiles.splice(i, 1); continue; }
+        const pdt = pr.team === "player" ? dt : (st.overclockTimer > 0 ? dt * 0.35 : dt);
+        pr.x += pr.vx * pdt;
+        pr.y += pr.vy * pdt;
+        pr.life -= pdt;
+
+        if (world.isSolid(pr.zone, pr.x, pr.y) || pr.life <= 0) {
+          spawnSparks(pr.x, pr.y, pr.z, pr.color, 4, 2.0);
+          st.projectiles.splice(i, 1);
+          continue;
+        }
+
+        if (pr.team === "player" || pr.team === "ally") {
+          let hit = false;
+          for (const e of st.entities) {
+            if (e.zone !== pr.zone || e.hp <= 0 || e.team === "ally") continue;
+            if (Math.hypot(e.x - pr.x, e.y - pr.y) < (e.radius + 0.25)) {
+              damageEntity(e, pr.dmg, pr.vx * 0.08, pr.vy * 0.08, { isPlayerSource: pr.team === "player" });
+              hit = true;
+              break;
+            }
+          }
+          if (hit) st.projectiles.splice(i, 1);
+        } else {
+          if (Math.hypot(p.x - pr.x, p.y - pr.y) < p.radius + 0.22) {
+            damagePlayer(pr.dmg, pr.vx * 0.08, pr.vy * 0.08);
+            st.projectiles.splice(i, 1);
+          }
+        }
+      }
+
+      // Particles & Float texts
+      for (let i = st.particles.length - 1; i >= 0; i--) {
+        const pt = st.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.z = Math.max(0, pt.z + pt.vz * dt);
+        pt.vz -= 9.5 * dt;
+        pt.life -= dt;
+        if (pt.life <= 0) st.particles.splice(i, 1);
+      }
+
+      for (let i = st.floatTexts.length - 1; i >= 0; i--) {
+        const ft = st.floatTexts[i];
+        ft.z += dt * 0.9;
+        ft.life -= dt;
+        if (ft.life <= 0) st.floatTexts.splice(i, 1);
+      }
+    }
+
+    return { update, damageEntity, damagePlayer, useQuickHack, spawnFloatText, spawnSparks };
+  }
+
+  /* ============================================================================
+   * MODULE 08: AI_DIRECTOR
+   * Dependencies: STATE_STORE, WORLD_MAP, COMBAT_ENGINE
+   * Exports: createAIDirector({ store, world, combat })
+   * Seam note: Enemy state machines (Patrol, Telegraph, Attack, Boss phases)
+   * ========================================================================== */
+  function createAIDirector({ store, world, combat }) {
+    function update(rawDt) {
+      const st = store.get();
+      const dt = st.overclockTimer > 0 ? rawDt * 0.35 : rawDt;
+      const p = st.player;
+
+      for (const e of st.entities) {
+        if (e.zone !== st.zoneId || e.hp <= 0 || e.kind === "crate") continue;
+
+        if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - rawDt);
+        e.animTime += dt * 5;
+
+        // Z-axis juggle gravity
+        if (e.kind !== "drone" && (e.z > 0 || e.vz > 0)) {
+          e.z += e.vz * rawDt;
+          e.vz -= 12.5 * rawDt;
+          if (e.z <= 0) { e.z = 0; e.vz = 0; }
+        }
+
+        // Knockback friction
+        e.x += e.vx * rawDt;
+        e.y += e.vy * rawDt;
+        e.vx *= 0.85;
+        e.vy *= 0.85;
+        world.resolveCollision(e);
+
+        if (e.stunTimer > 0) {
+          e.stunTimer -= dt;
+          continue;
+        }
+
+        if (e.hackedTimer > 0) {
+          e.hackedTimer -= rawDt;
+          if (e.hackedTimer <= 0) e.team = "enemy";
+        }
+
+        // Choose target (ally attacks enemies, enemy attacks player or hacked allies)
+        let target = p;
+        if (e.team === "ally") {
+          target = null;
+          let best = 9;
+          for (const other of st.entities) {
+            if (other.zone === st.zoneId && other.hp > 0 && other.team === "enemy" && other.kind !== "crate") {
+              const d = Math.hypot(other.x - e.x, other.y - e.y);
+              if (d < best) { best = d; target = other; }
+            }
+          }
+          if (!target) continue;
+        }
+
+        const dx = target.x - e.x;
+        const dy = target.y - e.y;
+        const dist = Math.hypot(dx, dy);
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+        e.facingX = nx;
+        e.facingY = ny;
+
+        e.aiTimer -= dt;
+
+        // Ranged Drone / Turret AI
+        if (e.kind === "drone" || e.kind === "turret") {
+          if (e.kind === "drone" && dist > 3.2 && dist < 8.5) {
+            e.x += nx * (e.speed / 64) * dt;
+            e.y += ny * (e.speed / 64) * dt;
+          }
+          if (e.aiState === "TELEGRAPH") {
+            if (e.aiTimer <= 0) {
+              st.projectiles.push({
+                zone: st.zoneId,
+                team: e.team,
+                x: e.x + nx * 0.4,
+                y: e.y + ny * 0.4,
+                z: 0.5,
+                vx: nx * 9.5,
+                vy: ny * 9.5,
+                dmg: e.dmg,
+                life: 1.2,
+                color: e.team === "ally" ? "#06b6d4" : "#ef4444"
+              });
+              e.aiState = "PATROL";
+              e.aiTimer = 1.4 + Math.random() * 0.6;
+            }
+          } else if (dist < 7.8 && e.aiTimer <= 0) {
+            e.aiState = "TELEGRAPH";
+            e.aiTimer = 0.45;
+          }
+          continue;
+        }
+
+        // Boss AI ("АГЕНТ-09")
+        if (e.kind === "boss") {
+          if (e.aiState === "TELEGRAPH") {
+            if (e.aiTimer <= 0) {
+              if (e.nextBossMove === "SLAM") {
+                combat.spawnSparks(e.x, e.y, 0.2, "#ef4444", 22, 4.8);
+                if (dist < 2.5) combat.damagePlayer(e.dmg + 6, nx, ny);
+                e.aiState = "PATROL";
+                e.aiTimer = 1.1;
+              } else {
+                // Dash charge
+                e.vx = nx * 8.2;
+                e.vy = ny * 8.2;
+                e.aiState = "CHARGING";
+                e.aiTimer = 0.35;
+              }
+            }
+          } else if (e.aiState === "CHARGING") {
+            if (dist < 1.35) combat.damagePlayer(e.dmg, nx, ny);
+            if (e.aiTimer <= 0) {
+              e.aiState = "PATROL";
+              e.aiTimer = 1.0;
+            }
+          } else {
+            if (dist > 1.2) {
+              e.x += nx * (e.speed / 64) * dt;
+              e.y += ny * (e.speed / 64) * dt;
+            }
+            if (e.aiTimer <= 0 && dist < 5.5) {
+              e.aiState = "TELEGRAPH";
+              e.nextBossMove = dist < 2.1 ? "SLAM" : "CHARGE";
+              e.aiTimer = 0.6;
+            }
+          }
+          continue;
+        }
+
+        // Standard Melee Enemies (punk, enforcer, shield)
+        if (e.aiState === "TELEGRAPH") {
+          if (e.aiTimer <= 0) {
+            if (dist < 1.45) {
+              if (target === p) combat.damagePlayer(e.dmg, nx, ny);
+              else combat.damageEntity(target, e.dmg, nx, ny, { isPlayerSource: false });
+            }
+            e.aiState = "PATROL";
+            e.aiTimer = 0.9 + Math.random() * 0.5;
+          }
+        } else if (dist < 1.25) {
+          if (e.aiTimer <= 0) {
+            e.aiState = "TELEGRAPH";
+            e.aiTimer = 0.42;
+          }
+        } else if (dist < 7.5) {
+          e.x += nx * (e.speed / 64) * dt;
+          e.y += ny * (e.speed / 64) * dt;
+        }
+      }
+    }
+
+    return { update };
+  }
+
+  /* ============================================================================
+   * MODULE 09: HACKING_MATRIX
+   * Dependencies: STATE_STORE, EVENT_BUS, WORLD_MAP
+   * Exports: createHackingMatrix({ store, bus, world })
+   * Seam note: 2026 AI Zero-Trust breach puzzle + world effect hooks
+   * ========================================================================== */
+  function createHackingMatrix({ store, bus, world }) {
+    const TOKENS = ["LLM", "AUTH", "ROOT", "SPOOF", "HEX", "KEY"];
+    let session = null;
+
+    const modal = document.getElementById("modal-hack");
+    const gridEl = document.getElementById("hack-grid");
+    const seqEl = document.getElementById("hack-target-seq");
+    const traceBar = document.getElementById("hack-trace-bar");
+    const timerText = document.getElementById("hack-timer-text");
+    const titleEl = document.getElementById("hack-title");
+    const subEl = document.getElementById("hack-subtitle");
+
+    document.getElementById("btn-hack-abort").addEventListener("click", () => abort());
+
+    function start(terminal) {
+      const st = store.get();
+      st.mode = "HACKING";
+      const targetSeq = Array.from({ length: 3 }, () => TOKENS[Math.floor(Math.random() * 4)]);
+      const cells = Array.from({ length: 25 }, (_, i) => {
+        const isIce = Math.random() < 0.16 && i > 4;
+        return {
+          idx: i,
+          r: Math.floor(i / 5),
+          c: i % 5,
+          token: isIce ? "ICE" : TOKENS[Math.floor(Math.random() * 4)],
+          ice: isIce,
+          used: false
+        };
+      });
+      // Guarantee target tokens exist on eligible paths
+      cells[2].token = targetSeq[0]; cells[2].ice = false;
+      cells[12].token = targetSeq[1]; cells[12].ice = false;
+      cells[14].token = targetSeq[2]; cells[14].ice = false;
+
+      session = {
+        terminal,
+        cells,
+        targetSeq,
+        progress: 0,
+        axis: "ROW", // alternates ROW -> COL -> ROW
+        activeIndex: 0,
+        trace: 0,
+        timeLeft: 15.0
+      };
+
+      titleEl.textContent = terminal.type === "HACK_TURRETS" ? "Перехоплення турелей Kuroda" : "Злам Zero-Trust шлюзу";
+      subEl.textContent = "Виберіть підсвічені токени у правильному порядку";
+      renderDOM();
+      modal.classList.add("open");
+    }
+
+    function isCellEligible(cell) {
+      if (!session || cell.used) return false;
+      return session.axis === "ROW" ? cell.r === session.activeIndex : cell.c === session.activeIndex;
+    }
+
+    function pickCell(idx) {
+      if (!session) return;
+      const cell = session.cells[idx];
+      if (!isCellEligible(cell)) return;
+      cell.used = true;
+
+      if (cell.ice) {
+        session.trace = Math.min(100, session.trace + 28);
+        bus.emit("hack:fail");
+      } else {
+        const needed = session.targetSeq[session.progress];
+        if (cell.token === needed) {
+          session.progress += 1;
+          bus.emit("pickup:reward");
+        } else {
+          session.trace = Math.min(100, session.trace + 12);
+        }
+      }
+
+      if (session.axis === "ROW") {
+        session.axis = "COL";
+        session.activeIndex = cell.c;
+      } else {
+        session.axis = "ROW";
+        session.activeIndex = cell.r;
+      }
+
+      if (session.progress >= session.targetSeq.length) {
+        complete(true);
+        return;
+      }
+      if (session.trace >= 100) {
+        complete(false);
+        return;
+      }
+      renderDOM();
+    }
+
+    function complete(success) {
+      const st = store.get();
+      const term = session.terminal;
+      modal.classList.remove("open");
+      session = null;
+      st.mode = "PLAYING";
+
+      if (success) {
+        st.stats.hacks += 1;
+        st.player.karma += 2;
+        world.usedTerminals.add(term.id);
+        bus.emit("hack:success");
+
+        if (term.type === "HACK_CRYPTO") {
+          st.player.credits += 160;
+          bus.emit("state:toast", "Злам успішний! +160 ₵ · +2 Карма");
+        } else if (term.type === "HACK_GATE") {
+          st.flags.vaultGateOpen = true;
+          st.questText = "Шлюз у Дата-Сховище відкрито! Проходьте праворуч.";
+          bus.emit("state:toast", "Шлюз у Сховище Kuroda розблоковано!");
+          bus.emit("quest:update");
+        } else if (term.type === "HACK_TURRETS") {
+          st.flags.vaultTurretsHacked = true;
+          for (const e of st.entities) {
+            if (e.zone === "vault" && e.kind === "turret" && e.hp > 0) {
+              e.team = "ally";
+              e.hackedTimer = 999;
+            }
+          }
+          bus.emit("state:toast", "Обидві турелі залу тепер атакують Агента-09!");
+        }
+      } else {
+        bus.emit("hack:fail");
+        bus.emit("state:toast", "Тривога ICE! З'єднання розірвано — спробуйте ще раз.");
+      }
+    }
+
+    function abort() {
+      if (!session) return;
+      modal.classList.remove("open");
+      session = null;
+      store.get().mode = "PLAYING";
+    }
+
+    function update(dt) {
+      if (!session) return;
+      session.timeLeft -= dt;
+      session.trace = Math.min(100, session.trace + dt * 5.2);
+      traceBar.style.width = `${Math.round(session.trace)}%`;
+      timerText.textContent = `Залишилось: ${Math.max(0, session.timeLeft).toFixed(1)}с`;
+      if (session.timeLeft <= 0 || session.trace >= 100) {
+        complete(false);
+      }
+    }
+
+    function renderDOM() {
+      if (!session) return;
+      gridEl.innerHTML = "";
+      session.cells.forEach((cell) => {
+        const btn = document.createElement("button");
+        btn.className = "hack-cell";
+        if (cell.used) btn.classList.add("used");
+        else if (cell.ice) btn.classList.add("ice");
+        if (isCellEligible(cell)) btn.classList.add("eligible");
+        btn.textContent = cell.token;
+        btn.addEventListener("click", () => pickCell(cell.idx));
+        gridEl.appendChild(btn);
+      });
+
+      seqEl.innerHTML = "";
+      session.targetSeq.forEach((tok, idx) => {
+        const span = document.createElement("span");
+        span.className = "seq-tok" + (idx < session.progress ? " done" : "");
+        span.textContent = tok;
+        seqEl.appendChild(span);
+      });
+    }
+
+    return { start, update, abort };
+  }
+
+  /* ============================================================================
+   * MODULE 10: DIALOGUE_QUEST & RIPPERDOC SHOP
+   * Dependencies: CONFIG, STATE_STORE, EVENT_BUS
+   * Exports: createDialogueQuest({ config, store, bus })
+   * Seam note: SNES Shadowrun keyword-dialogue engine & cyberware shop
+   * ========================================================================== */
+  function createDialogueQuest({ config, store, bus }) {
+    const dlgModal = document.getElementById("modal-dialogue");
+    const dlgName = document.getElementById("dlg-npc-name");
+    const dlgRole = document.getElementById("dlg-npc-role");
+    const dlgText = document.getElementById("dlg-text");
+    const dlgKeywords = document.getElementById("dlg-keywords");
+    const portraitCanvas = document.getElementById("dlg-portrait");
+
+    const shopModal = document.getElementById("modal-shop");
+    const shopList = document.getElementById("shop-list");
+    const shopWallet = document.getElementById("shop-wallet");
+
+    let activeNpcId = null;
+
+    document.getElementById("btn-dlg-close").addEventListener("click", closeDialogue);
+    document.getElementById("btn-shop-close").addEventListener("click", closeShop);
+    bus.on("dialogue:close", closeDialogue);
+    bus.on("shop:open", openShop);
+
+    function drawPortrait(color, accent) {
+      const ctx = portraitCanvas.getContext("2d");
+      ctx.clearRect(0, 0, 112, 128);
+      ctx.fillStyle = "#09101c";
+      ctx.fillRect(0, 0, 112, 128);
+      // Subtle scanlines
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      for (let y = 0; y < 128; y += 4) ctx.fillRect(0, y, 112, 1);
+      // Shoulders
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(20, 88, 72, 40);
+      // Head
+      ctx.fillStyle = "#d6b89c";
+      ctx.fillRect(36, 36, 40, 48);
+      // Cybervisor / Optics
+      ctx.fillStyle = accent;
+      ctx.fillRect(34, 50, 44, 10);
+      // Hair / Hood
+      ctx.fillStyle = color;
+      ctx.fillRect(32, 26, 48, 16);
+      ctx.fillRect(30, 36, 8, 30);
+    }
+
+    function openDialogue(npcId) {
+      const npc = config.DIALOGUES[npcId];
+      if (!npc) return;
+      const st = store.get();
+      st.mode = "DIALOGUE";
+      activeNpcId = npcId;
+      dlgName.textContent = npc.name;
+      dlgRole.textContent = npc.role;
+      dlgText.textContent = npc.greeting;
+      drawPortrait(npc.portraitColor, npc.portraitAccent);
+      renderKeywords(npc);
+      dlgModal.classList.add("open");
+    }
+
+    function renderKeywords(npc) {
+      const st = store.get();
+      dlgKeywords.innerHTML = "";
+      npc.keywords.forEach((kw) => {
+        if (kw.requires && !st.unlockedKeywords.includes(kw.requires)) return;
+        const btn = document.createElement("button");
+        const isAsked = st.askedKeywords.includes(kw.id);
+        btn.className = "kw-btn" + (kw.isAction ? " action-btn" : "") + (isAsked ? " asked" : "");
+        btn.textContent = kw.label;
+        btn.addEventListener("click", () => {
+          dlgText.textContent = kw.text;
+          if (!st.askedKeywords.includes(kw.id)) st.askedKeywords.push(kw.id);
+          for (const u of kw.unlocks || []) {
+            if (!st.unlockedKeywords.includes(u)) st.unlockedKeywords.push(u);
+          }
+          if (kw.onSelect) kw.onSelect(st, bus);
+          bus.emit("pickup:reward");
+          renderKeywords(npc);
+        });
+        dlgKeywords.appendChild(btn);
+      });
+    }
+
+    function closeDialogue() {
+      if (!activeNpcId) return;
+      activeNpcId = null;
+      dlgModal.classList.remove("open");
+      if (store.get().mode === "DIALOGUE") store.get().mode = "PLAYING";
+    }
+
+    function openShop() {
+      const st = store.get();
+      st.mode = "SHOP";
+      renderShop();
+      shopModal.classList.add("open");
+    }
+
+    function renderShop() {
+      const st = store.get();
+      const p = st.player;
+      shopWallet.textContent = `Баланс: ${p.credits} ₵ · Карма: ${p.karma}`;
+      shopList.innerHTML = "";
+
+      config.SHOP_ITEMS.forEach((item) => {
+        const rank = st.shopPurchases[item.id] || 0;
+        const maxed = rank >= item.maxRank;
+        const canAfford = p.credits >= item.costCredits && p.karma >= item.costKarma && !maxed;
+
+        const row = document.createElement("div");
+        row.className = "shop-item";
+        row.innerHTML = `
+          <div>
+            <h4>${item.name}${item.maxRank < 10 ? ` (${rank}/${item.maxRank})` : ""}</h4>
+            <p>${item.desc}</p>
+          </div>
+          <button class="btn-mini" ${canAfford ? "" : "disabled"} style="padding:8px 12px; opacity:${canAfford ? 1 : 0.45};">
+            ${maxed ? "Макс." : `${item.costCredits} ₵${item.costKarma ? ` · ${item.costKarma} Карма` : ""}`}
+          </button>
+        `;
+        row.querySelector("button").addEventListener("click", () => {
+          if (!canAfford) return;
+          p.credits -= item.costCredits;
+          p.karma -= item.costKarma;
+          st.shopPurchases[item.id] = rank + 1;
+          item.apply(p);
+          bus.emit("hack:success");
+          bus.emit("state:toast", `Встановлено: ${item.name}`);
+          renderShop();
+        });
+        shopList.appendChild(row);
+      });
+    }
+
+    function closeShop() {
+      shopModal.classList.remove("open");
+      if (store.get().mode === "SHOP") store.get().mode = "PLAYING";
+    }
+
+    return { openDialogue, closeDialogue, openShop, closeShop };
+  }
+
+  /* ============================================================================
+   * MODULE 11: ISOMETRIC_RENDERER
+   * Dependencies: CONFIG, STATE_STORE, WORLD_MAP
+   * Exports: createRenderer({ canvas, config, store, world })
+   * Seam note: Pure Canvas 2D isometric projection, depth sorting, 2026 neon FX
+   * ========================================================================== */
+  function createRenderer({ canvas, config, store, world }) {
+    const ctx = canvas.getContext("2d");
+    let width = 1280;
+    let height = 720;
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth || window.innerWidth;
+      height = canvas.clientHeight || window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawIsoDiamond(cx, cy, w, h, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - h * 0.5);
+      ctx.lineTo(cx + w * 0.5, cy);
+      ctx.lineTo(cx, cy + h * 0.5);
+      ctx.lineTo(cx - w * 0.5, cy);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+    }
+
+    function drawIsoBox(cx, cy, w, h, boxH, topCol, leftCol, rightCol) {
+      // Left face
+      ctx.beginPath();
+      ctx.moveTo(cx - w * 0.5, cy);
+      ctx.lineTo(cx, cy + h * 0.5);
+      ctx.lineTo(cx, cy + h * 0.5 - boxH);
+      ctx.lineTo(cx - w * 0.5, cy - boxH);
+      ctx.closePath();
+      ctx.fillStyle = leftCol;
+      ctx.fill();
+
+      // Right face
+      ctx.beginPath();
+      ctx.moveTo(cx + w * 0.5, cy);
+      ctx.lineTo(cx, cy + h * 0.5);
+      ctx.lineTo(cx, cy + h * 0.5 - boxH);
+      ctx.lineTo(cx + w * 0.5, cy - boxH);
+      ctx.closePath();
+      ctx.fillStyle = rightCol;
+      ctx.fill();
+
+      // Top face
+      drawIsoDiamond(cx, cy - boxH, w, h, topCol, "rgba(148,163,184,0.16)");
+    }
+
+    function render(nearby) {
+      const st = store.get();
+      const z = world.getCurrentZone();
+      const cam = st.camera;
+      const p = st.player;
+
+      // Smooth camera follow + screen shake
+      const targetCamX = (p.x - p.y) * (config.TILE_W * 0.5) - width * 0.5;
+      const targetCamY = (p.x + p.y) * (config.TILE_H * 0.5) - height * 0.52;
+      cam.x += (targetCamX - cam.x) * 0.14;
+      cam.y += (targetCamY - cam.y) * 0.14;
+
+      let sxShake = 0, syShake = 0;
+      if (st.shakeTime > 0) {
+        sxShake = (Math.random() - 0.5) * st.shakeMag * 2;
+        syShake = (Math.random() - 0.5) * st.shakeMag * 2;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.save();
+      ctx.translate(sxShake, syShake);
+
+      // Floor tiles
+      for (let ty = 0; ty < z.height; ty++) {
+        for (let tx = 0; tx < z.width; tx++) {
+          const tile = z.grid[ty][tx];
+          if (tile === 3) continue;
+          const pos = world.worldToScreen(tx + 0.5, ty + 0.5, cam);
+          let fill = "#111827";
+          let stroke = "rgba(148,163,184,0.08)";
+          if (tile === 1) { fill = "#1a2335"; stroke = "rgba(148,163,184,0.14)"; }
+          else if (tile === 2) {
+            fill = "#0e2a3d";
+            stroke = "rgba(6,182,212,0.28)";
+          } else if (tile === 4) {
+            fill = "#2a1f14";
+            stroke = "rgba(245,158,11,0.45)";
+          } else if (tile === 5) {
+            fill = "#0d2922";
+            stroke = "rgba(16,185,129,0.55)";
+          }
+          drawIsoDiamond(pos.x, pos.y, config.TILE_W, config.TILE_H, fill, stroke);
+        }
+      }
+
+      // Collect depth-sorted drawables
+      const drawables = [];
+
+      // Walls
+      for (let ty = 0; ty < z.height; ty++) {
+        for (let tx = 0; tx < z.width; tx++) {
+          if (z.grid[ty][tx] === 3) {
+            drawables.push({ sortY: tx + ty + 1, type: "WALL", tx, ty });
+          }
+        }
+      }
+
+      // Terminals
+      for (const term of z.terminals) {
+        if (world.usedTerminals.has(term.id)) continue;
+        drawables.push({ sortY: term.x + term.y, type: "TERMINAL", data: term });
+      }
+
+      // NPCs
+      for (const npc of z.npcs) {
+        drawables.push({ sortY: npc.x + npc.y, type: "NPC", data: npc });
+      }
+
+      // Entities (Enemies & Crates)
+      for (const e of st.entities) {
+        if (e.zone !== st.zoneId || e.hp <= 0) continue;
+        drawables.push({ sortY: e.x + e.y, type: e.kind === "crate" ? "CRATE" : "ENEMY", data: e });
+      }
+
+      // Player
+      drawables.push({ sortY: p.x + p.y, type: "PLAYER", data: p });
+
+      drawables.sort((a, b) => a.sortY - b.sortY);
+
+      for (const item of drawables) {
+        if (item.type === "WALL") {
+          const pos = world.worldToScreen(item.tx + 0.5, item.ty + 0.5, cam);
+          drawIsoBox(pos.x, pos.y, config.TILE_W, config.TILE_H, 28, "#1e293b", "#141d2c", "#0e1522");
+        } else if (item.type === "TERMINAL") {
+          const t = item.data;
+          const pos = world.worldToScreen(t.x, t.y, cam);
+          const col = t.type === "EXTRACT" ? "#10b981" : (t.type === "PORTAL" ? "#f59e0b" : "#06b6d4");
+          drawIsoBox(pos.x, pos.y, 26, 13, 24, "#1e293b", "#0f172a", col);
+          ctx.fillStyle = col;
+          ctx.fillRect(pos.x - 5, pos.y - 22, 10, 6);
+        } else if (item.type === "CRATE") {
+          const c = item.data;
+          const pos = world.worldToScreen(c.x, c.y, cam);
+          const flash = c.hitFlash > 0;
+          drawIsoBox(pos.x, pos.y, 32, 16, 20, flash ? "#ffffff" : "#f59e0b", "#b45309", "#78350f");
+        } else if (item.type === "NPC") {
+          drawCharacter(item.data, cam, false);
+        } else if (item.type === "ENEMY") {
+          drawEnemy(item.data, cam);
+        } else if (item.type === "PLAYER") {
+          drawPlayer(p, cam);
+        }
+      }
+
+      // Projectiles
+      for (const pr of st.projectiles) {
+        if (pr.zone !== st.zoneId) continue;
+        const pos = world.worldToScreen(pr.x, pr.y, cam);
+        ctx.fillStyle = pr.color;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y - pr.z * 26, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Particles
+      for (const pt of st.particles) {
+        const pos = world.worldToScreen(pt.x, pt.y, cam);
+        ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+        ctx.fillStyle = pt.color;
+        ctx.fillRect(pos.x - pt.size * 0.5, pos.y - pt.z * 24 - pt.size * 0.5, pt.size, pt.size);
+      }
+      ctx.globalAlpha = 1;
+
+      // Floating signs (2026 cyber ads)
+      ctx.font = '700 11px "IBM Plex Mono", monospace';
+      ctx.textAlign = "center";
+      for (const s of z.signs) {
+        const pos = world.worldToScreen(s.x, s.y, cam);
+        ctx.fillStyle = "rgba(8,11,17,0.8)";
+        ctx.fillRect(pos.x - 68, pos.y - 48, 136, 18);
+        ctx.strokeStyle = s.color;
+        ctx.strokeRect(pos.x - 68, pos.y - 48, 136, 18);
+        ctx.fillStyle = s.color;
+        ctx.fillText(s.text, pos.x, pos.y - 35);
+      }
+
+      // Nearby interactable prompt
+      if (nearby) {
+        const pos = world.worldToScreen(nearby.x, nearby.y, cam);
+        ctx.font = '600 12px "IBM Plex Mono", monospace';
+        const tw = ctx.measureText(nearby.label).width + 18;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+        ctx.fillRect(pos.x - tw * 0.5, pos.y - 68, tw, 24);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.strokeRect(pos.x - tw * 0.5, pos.y - 68, tw, 24);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillText(nearby.label, pos.x, pos.y - 52);
+      }
+
+      // Floating combat damage text
+      for (const ft of st.floatTexts) {
+        const pos = world.worldToScreen(ft.x, ft.y, cam);
+        ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+        ctx.font = ft.big ? '700 15px "Chakra Petch", sans-serif' : '600 12px "IBM Plex Mono", monospace';
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, pos.x, pos.y - ft.z * 28 - 22);
+      }
+      ctx.globalAlpha = 1;
+
+      // Rain FX
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.16)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (const r of st.rainDrops) {
+        const rx = r.x * width;
+        const ry = r.y * height;
+        ctx.moveTo(rx, ry);
+        ctx.lineTo(rx - 4, ry + r.len);
+      }
+      ctx.stroke();
+
+      // Overclock tint vignette
+      if (st.overclockTimer > 0) {
+        ctx.strokeStyle = "rgba(245, 158, 11, 0.55)";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, width - 6, height - 6);
+      }
+
+      ctx.restore();
+    }
+
+    function drawCharacter(npc, cam) {
+      const pos = world.worldToScreen(npc.x, npc.y, cam);
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath();
+      ctx.ellipse(pos.x, pos.y, 14, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(pos.x - 8, pos.y - 30, 16, 24);
+      ctx.fillStyle = "#e2c2a4";
+      ctx.fillRect(pos.x - 6, pos.y - 41, 12, 11);
+      ctx.fillStyle = npc.color;
+      ctx.fillRect(pos.x - 7, pos.y - 38, 14, 4);
+
+      ctx.font = '600 11px "IBM Plex Mono", monospace';
+      ctx.textAlign = "center";
+      ctx.fillStyle = npc.color;
+      ctx.fillText(npc.name, pos.x, pos.y - 47);
+    }
+
+    function drawPlayer(p, cam) {
+      const st = store.get();
+      // Afterimages
+      for (const img of p.afterimages) {
+        const ap = world.worldToScreen(img.x, img.y, cam);
+        ctx.globalAlpha = img.alpha * 0.55;
+        ctx.fillStyle = st.overclockTimer > 0 ? "#f59e0b" : "#06b6d4";
+        ctx.fillRect(ap.x - 9, ap.y - 34, 18, 30);
+      }
+      ctx.globalAlpha = 1;
+
+      const pos = world.worldToScreen(p.x, p.y, cam);
+      const bob = p.action === "RUN" ? Math.sin(p.animTime) * 2.5 : 0;
+
+      // Shadow
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.beginPath();
+      ctx.ellipse(pos.x, pos.y, 15, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Coat & Legs
+      const flash = p.hitFlash > 0;
+      ctx.fillStyle = flash ? "#ffffff" : "#1e293b";
+      ctx.fillRect(pos.x - 9, pos.y - 32 + bob, 18, 26);
+      // Amber collar accent (Shadowrun runner coat)
+      ctx.fillStyle = flash ? "#ffffff" : "#f59e0b";
+      ctx.fillRect(pos.x - 10, pos.y - 33 + bob, 20, 5);
+      // Head + Cyan AR Visor
+      ctx.fillStyle = "#d9bca0";
+      ctx.fillRect(pos.x - 6, pos.y - 44 + bob, 12, 11);
+      ctx.fillStyle = "#22d3ee";
+      ctx.fillRect(pos.x - 6, pos.y - 40 + bob, 13, 4);
+
+      // Melee Swing Arc FX
+      if (p.action.startsWith("ATTACK_") || p.action === "HEAVY") {
+        const fScreenX = (p.facingX - p.facingY) * 20;
+        const fScreenY = (p.facingX + p.facingY) * 10;
+        ctx.strokeStyle = p.action === "HEAVY" ? "#f59e0b" : "#22d3ee";
+        ctx.lineWidth = p.action === "HEAVY" ? 4 : 2.5;
+        ctx.beginPath();
+        ctx.arc(pos.x + fScreenX * 0.5, pos.y - 20 + fScreenY * 0.5, p.action === "HEAVY" ? 28 : 22, -0.9, 0.9);
+        ctx.stroke();
+      }
+    }
+
+    function drawEnemy(e, cam) {
+      const pos = world.worldToScreen(e.x, e.y, cam);
+      const zPx = (e.z || 0) * 28;
+      const flash = e.hitFlash > 0;
+
+      // Ground shadow
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.beginPath();
+      ctx.ellipse(pos.x, pos.y, e.kind === "boss" ? 24 : 14, e.kind === "boss" ? 12 : 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Telegraph indicator
+      if (e.aiState === "TELEGRAPH") {
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.75)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y - 16 - zPx, e.kind === "boss" ? 32 : 20, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (e.kind === "drone") {
+        ctx.fillStyle = flash ? "#ffffff" : (e.team === "ally" ? "#06b6d4" : "#334155");
+        ctx.fillRect(pos.x - 10, pos.y - 18 - zPx, 20, 10);
+        ctx.fillStyle = e.team === "ally" ? "#22d3ee" : "#ef4444";
+        ctx.fillRect(pos.x - 3, pos.y - 15 - zPx, 6, 4);
+        // Rotors
+        ctx.strokeStyle = "rgba(148,163,184,0.7)";
+        ctx.beginPath();
+        ctx.moveTo(pos.x - 16, pos.y - 20 - zPx);
+        ctx.lineTo(pos.x - 6, pos.y - 20 - zPx);
+        ctx.moveTo(pos.x + 6, pos.y - 20 - zPx);
+        ctx.lineTo(pos.x + 16, pos.y - 20 - zPx);
+        ctx.stroke();
+      } else if (e.kind === "turret") {
+        drawIsoBox(pos.x, pos.y, 28, 14, 18, flash ? "#ffffff" : (e.team === "ally" ? "#06b6d4" : "#475569"), "#1e293b", "#0f172a");
+        ctx.fillStyle = e.team === "ally" ? "#22d3ee" : "#ef4444";
+        ctx.fillRect(pos.x - 4, pos.y - 20, 8, 6);
+      } else {
+        const w = e.kind === "boss" ? 26 : 16;
+        const h = e.kind === "boss" ? 40 : 26;
+        ctx.fillStyle = flash ? "#ffffff" : (e.kind === "boss" ? "#7f1d1d" : (e.kind === "enforcer" ? "#334155" : "#475569"));
+        ctx.fillRect(pos.x - w * 0.5, pos.y - h - 6 - zPx, w, h);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillRect(pos.x - 5, pos.y - h - 16 - zPx, 10, 10);
+        ctx.fillStyle = e.stunTimer > 0 ? "#06b6d4" : "#ef4444";
+        ctx.fillRect(pos.x - 5, pos.y - h - 13 - zPx, 10, 3);
+
+        if (e.shield > 0) {
+          ctx.strokeStyle = "#22d3ee";
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(pos.x - w * 0.65, pos.y - h - 10 - zPx, w * 1.3, h + 6);
+        }
+      }
+
+      // Overhead mini HP bar
+      const bw = e.kind === "boss" ? 56 : 32;
+      const ratio = Math.max(0, e.hp / e.maxHp);
+      ctx.fillStyle = "rgba(8,11,17,0.85)";
+      ctx.fillRect(pos.x - bw * 0.5, pos.y - (e.kind === "boss" ? 64 : 48) - zPx, bw, 4);
+      ctx.fillStyle = e.team === "ally" ? "#06b6d4" : "#ef4444";
+      ctx.fillRect(pos.x - bw * 0.5, pos.y - (e.kind === "boss" ? 64 : 48) - zPx, bw * ratio, 4);
+    }
+
+    return { resize, render };
+  }
+
+  /* ============================================================================
+   * MODULE 12: HUD_UI & KERNEL_BOOTSTRAP
+   * Dependencies: All modules (01..11)
+   * Exports: AppKernel (clean orchestrator connecting all seams)
+   * Seam note: Main entry point; replace with framework router/shell in modular build
+   * ========================================================================== */
+  const canvas = document.getElementById("world-canvas");
+  const bus = createEventBus();
+  const store = createStateStore({ config: CONFIG, bus });
+  const input = createInputManager({ canvas });
+  const audio = createAudioSynth({ bus });
+  const world = createWorldMap({ config: CONFIG, store, bus });
+  const combat = createCombatEngine({ config: CONFIG, store, bus, world, input });
+  const ai = createAIDirector({ store, world, combat });
+  const hacking = createHackingMatrix({ store, bus, world });
+  const dialogue = createDialogueQuest({ config: CONFIG, store, bus });
+  const renderer = createRenderer({ canvas, config: CONFIG, store, world });
+
+  // DOM HUD bindings
+  const hudTop = document.getElementById("hud-top");
+  const hudBottom = document.getElementById("hud-bottom");
+  const hpBar = document.getElementById("hud-hp-bar");
+  const hpVal = document.getElementById("hud-hp-val");
+  const ramBar = document.getElementById("hud-ram-bar");
+  const ramVal = document.getElementById("hud-ram-val");
+  const credEl = document.getElementById("hud-credits");
+  const ammoEl = document.getElementById("hud-ammo");
+  const karmaEl = document.getElementById("hud-karma");
+  const keyIndEl = document.getElementById("hud-key-ind");
+  const zoneEl = document.getElementById("hud-zone");
+  const questEl = document.getElementById("hud-quest");
+  const comboBadge = document.getElementById("combo-badge");
+  const comboNum = document.getElementById("combo-num");
+  const toastStack = document.getElementById("toast-stack");
+
+  const modalTitle = document.getElementById("modal-title");
+  const modalSys = document.getElementById("modal-system");
+  const sysTitle = document.getElementById("sys-title");
+  const sysSub = document.getElementById("sys-sub");
+  const sysBody = document.getElementById("sys-body");
+  const sysStats = document.getElementById("sys-stats");
+  const btnSysPrimary = document.getElementById("btn-sys-primary");
+  const btnContinue = document.getElementById("btn-continue-save");
+
+  if (store.hasSave()) btnContinue.style.display = "inline-block";
+
+  bus.on("state:toast", (msg) => {
+    const el = document.createElement("div");
+    el.className = "toast-msg";
+    el.textContent = msg;
+    toastStack.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  });
+
+  function beginPlaying() {
+    audio.unlock();
+    modalTitle.classList.remove("open");
+    modalSys.classList.remove("open");
+    hudTop.style.display = "flex";
+    hudBottom.style.display = "flex";
+    store.get().mode = "PLAYING";
+    world.spawnZoneEntities(store.get().zoneId);
+    window.focus();
+  }
+
+  document.getElementById("btn-start-new").addEventListener("click", () => {
+    world.usedTerminals.clear();
+    store.reset();
+    beginPlaying();
+  });
+
+  btnContinue.addEventListener("click", () => {
+    world.usedTerminals.clear();
+    if (store.load()) beginPlaying();
+  });
+
+  document.getElementById("btn-audio-toggle").addEventListener("click", (e) => {
+    const on = audio.toggle();
+    e.currentTarget.textContent = `Звук: ${on ? "Увімк" : "Вимк"}`;
+  });
+
+  document.getElementById("btn-save-game").addEventListener("click", () => store.save());
+  document.getElementById("btn-pause-game").addEventListener("click", openPause);
+
+  document.querySelectorAll(".skill-slot").forEach((el) => {
+    el.addEventListener("click", () => combat.useQuickHack(el.dataset.skill));
+  });
+
+  function openPause() {
+    const st = store.get();
+    if (st.mode !== "PLAYING") return;
+    st.mode = "PAUSED";
+    sysTitle.textContent = "Пауза";
+    sysSub.textContent = "РЕЙД ПРИЗУПИНЕНО";
+    sysBody.textContent = "Усі процеси призупинено. Ви можете повернутися до бою або перезапустити рейд.";
+    sysStats.style.display = "none";
+    btnSysPrimary.textContent = "Продовжити";
+    btnSysPrimary.onclick = () => {
+      modalSys.classList.remove("open");
+      st.mode = "PLAYING";
+    };
+    modalSys.classList.add("open");
+  }
+
+  function showEndModal(victory) {
+    const st = store.get();
+    sysTitle.textContent = victory ? "Місію виконано!" : "Раннер виведений з ладу";
+    sysSub.textContent = victory ? "ДАНІ «ХІМЕРА» ВИЛУЧЕНО" : "СИГНАЛ БІОМЕТРІЇ ВТРАЧЕНО";
+    sysBody.textContent = victory
+      ? "Ви пробилися крізь Zero-Trust охорону Kuroda-Bio та витягли ваги проєкту «Хімера». Сектор «Синтез-7» вільний від корпоративної зачистки."
+      : "Корпоративна охорона нейтралізувала вашу нейромережу. Перезапустіть рейд і скористайтеся імплантами Дока та швидкими хаками.";
+    sysStats.style.display = "block";
+    sysStats.innerHTML = `
+      <div>Ворогів нейтралізовано: <strong>${st.stats.kills}</strong></div>
+      <div>Зламів виконано: <strong>${st.stats.hacks}</strong></div>
+      <div>Максимальне комбо: <strong>${st.stats.maxCombo}x</strong></div>
+      <div>Зароблено кредитів: <strong>${st.stats.creditsEarned} ₵</strong></div>
+    `;
+    btnSysPrimary.textContent = "Грати знову";
+    btnSysPrimary.onclick = () => {
+      world.usedTerminals.clear();
+      store.reset();
+      beginPlaying();
+    };
+    modalSys.classList.add("open");
+  }
+
+  document.getElementById("btn-sys-restart").addEventListener("click", () => {
+    world.usedTerminals.clear();
+    store.reset();
+    beginPlaying();
+  });
+
+  bus.on("game:over", () => showEndModal(false));
+  bus.on("game:victory", () => showEndModal(true));
+
+  function handleInteract(nearby) {
+    const st = store.get();
+    if (!nearby) return;
+    if (nearby.kind === "NPC") {
+      dialogue.openDialogue(nearby.data.id);
+      return;
+    }
+    const term = nearby.data;
+    if (term.type === "VENDING") {
+      if (st.player.credits >= 30 && st.player.hp < st.player.maxHp) {
+        st.player.credits -= 30;
+        st.player.hp = Math.min(st.player.maxHp, st.player.hp + 45);
+        bus.emit("pickup:reward");
+        bus.emit("state:toast", "Синт-рамен куплено: +45 HP");
+      } else {
+        bus.emit("state:toast", st.player.hp >= st.player.maxHp ? "HP уже повне" : "Потрібно 30 ₵");
+      }
+    } else if (term.type === "PORTAL") {
+      if (term.requiresFlag && !st.flags[term.requiresFlag]) {
+        bus.emit("state:toast", "Шлюз заблоковано! Зламайте сусідній термінал [E].");
+        return;
+      }
+      if (term.targetZone === "transit" && !st.flags.hasSectorKey && !st.flags.transitGateOpen) {
+        const remaining = st.entities.filter(e => e.zone === "alley" && e.team === "enemy" && e.hp > 0).length;
+        if (remaining > 0) {
+          bus.emit("state:toast", `Доступ закрито: поговоріть з Кешем або зачистіть сектор (${remaining} ворогів).`);
+          return;
+        }
+        st.flags.transitGateOpen = true;
+      }
+      world.changeZone(term.targetZone, term.spawnX, term.spawnY);
+    } else if (term.type === "HACK_CRYPTO" || term.type === "HACK_GATE" || term.type === "HACK_TURRETS") {
+      hacking.start(term);
+    } else if (term.type === "EXTRACT") {
+      if (!st.flags.bossDefeated) {
+        bus.emit("state:toast", "Спочатку нейтралізуйте АГЕНТА-09!");
+        return;
+      }
+      st.flags.extracted = true;
+      st.mode = "VICTORY";
+      bus.emit("hack:success");
+      bus.emit("game:victory");
+    }
+  }
+
+  function syncHud() {
+    const st = store.get();
+    const p = st.player;
+    const z = world.getCurrentZone();
+
+    hpBar.style.width = `${Math.round((p.hp / p.maxHp) * 100)}%`;
+    hpVal.textContent = `${Math.ceil(p.hp)}/${p.maxHp}`;
+    ramBar.style.width = `${Math.round((p.ram / p.maxRam) * 100)}%`;
+    ramVal.textContent = `${Math.floor(p.ram)}/${p.maxRam}`;
+    credEl.textContent = p.credits;
+    ammoEl.textContent = p.ammo;
+    karmaEl.textContent = p.karma;
+    keyIndEl.innerHTML = st.flags.hasSectorKey ? 'Ключ <strong>DATA-OK</strong>' : "";
+    zoneEl.textContent = z.title;
+    questEl.textContent = st.questText;
+
+    if (st.combo.count >= 2) {
+      comboBadge.classList.add("visible");
+      comboNum.textContent = `${st.combo.count}x`;
+    } else {
+      comboBadge.classList.remove("visible");
+    }
+
+    document.querySelectorAll(".skill-slot").forEach((el) => {
+      const k = el.dataset.skill;
+      const spec = CONFIG.SKILLS[k];
+      const ready = p.ram >= spec.cost && p.skillCd[k] <= 0;
+      el.classList.toggle("disabled", !ready);
+      el.classList.toggle("active-buff", k === "overclock" && st.overclockTimer > 0);
+    });
+  }
+
+  // Main Loop
+  let lastTime = performance.now();
+  let accumulator = 0;
+
+  window.addEventListener("resize", () => renderer.resize());
+  renderer.resize();
+
+  function frame(now) {
+    const rawDt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    const st = store.get();
+
+    // Global Esc handling
+    if (input.wasPressed("Escape")) {
+      if (st.mode === "PLAYING") openPause();
+      else if (st.mode === "PAUSED") { modalSys.classList.remove("open"); st.mode = "PLAYING"; }
+      else if (st.mode === "DIALOGUE") dialogue.closeDialogue();
+      else if (st.mode === "SHOP") dialogue.closeShop();
+      else if (st.mode === "HACKING") hacking.abort();
+    }
+
+    // Rain update
+    for (const r of st.rainDrops) {
+      r.y += r.speed * rawDt;
+      r.x -= r.speed * 0.14 * rawDt;
+      if (r.y > 1) { r.y = -0.05; r.x = Math.random(); }
+    }
+
+    let nearby = null;
+    if (st.mode === "PLAYING") {
+      nearby = world.findNearbyInteractable();
+      if (input.wasPressed("KeyE") && nearby) {
+        handleInteract(nearby);
+      }
+
+      if (st.shakeTime > 0) st.shakeTime = Math.max(0, st.shakeTime - rawDt);
+      if (st.hitStop > 0) {
+        st.hitStop = Math.max(0, st.hitStop - rawDt);
+      } else {
+        accumulator += rawDt;
+        while (accumulator >= CONFIG.FIXED_DT) {
+          combat.update(CONFIG.FIXED_DT);
+          ai.update(CONFIG.FIXED_DT);
+          accumulator -= CONFIG.FIXED_DT;
+        }
+      }
+      syncHud();
+    } else if (st.mode === "HACKING") {
+      hacking.update(rawDt);
+    }
+
+    renderer.render(nearby);
+    input.endFrame();
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

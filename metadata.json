@@ -1,0 +1,6 @@
+{
+  "name": "Shadowrun 2026 — Кіберпанк Бітемап",
+  "description": "Однофайлова ізометрична RPG-бітемап гра у стилі SNES Shadowrun в реаліях кіберпанку 2026 року з модульною архітектурою.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
