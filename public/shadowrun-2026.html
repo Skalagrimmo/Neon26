@@ -52,6 +52,15 @@
       cursor: crosshair;
     }
 
+    canvas#rain-shader-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+    }
+
     /* === HUD OVERLAYS === */
     .hud-top {
       position: absolute;
@@ -162,9 +171,25 @@
 
     .hud-actions {
       display: flex;
+      align-items: center;
       justify-content: flex-end;
       gap: 6px;
       margin-top: 8px;
+    }
+
+    .autosave-indicator {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      opacity: 0.72;
+      margin-right: 4px;
+      transition: opacity 200ms, color 200ms;
+      white-space: nowrap;
+    }
+
+    .autosave-indicator.saved {
+      color: var(--accent-emerald);
+      opacity: 1;
     }
 
     .btn-mini {
@@ -223,6 +248,12 @@
     .skill-slot.active-buff {
       border-color: var(--accent-amber);
       box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .skill-slot.active-thermal {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.18);
+      box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);
     }
 
     .skill-key {
@@ -291,28 +322,82 @@
       letter-spacing: 0.06em;
     }
 
-    .toast-stack {
+    .event-console {
       position: absolute;
-      top: 96px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 14px;
+      bottom: 14px;
+      width: 348px;
+      max-width: calc(100vw - 28px);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 6px;
+      gap: 4px;
       pointer-events: none;
-      z-index: 15;
+      z-index: 16;
     }
 
-    .toast-msg {
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(6, 182, 212, 0.45);
-      color: var(--text-primary);
-      padding: 6px 14px;
-      border-radius: 4px;
+    @media (max-width: 1240px) {
+      .event-console {
+        bottom: 74px;
+      }
+    }
+
+    .event-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      background: rgba(10, 15, 25, 0.74);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
+      padding: 6px 10px;
+      backdrop-filter: blur(6px);
       font-family: var(--font-mono);
-      font-size: 12px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      font-size: 11px;
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .event-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .event-line.fading {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+
+    .event-time {
+      color: var(--text-muted);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .event-sep {
+      color: rgba(148, 163, 184, 0.42);
+      flex-shrink: 0;
+    }
+
+    .event-cat {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .event-cat.cat-SAVE { color: var(--accent-emerald); }
+    .event-cat.cat-LOOT { color: var(--accent-amber); }
+    .event-cat.cat-QUEST { color: var(--accent-cyan); }
+    .event-cat.cat-HACK { color: #38bdf8; }
+    .event-cat.cat-SYS { color: #fca5a5; }
+
+    .event-text {
+      color: #e2e8f0;
+      word-break: break-word;
     }
 
     /* === MODALS (TITLE, DIALOGUE, HACKING, SHOP, PAUSE, END) === */
@@ -618,6 +703,235 @@
       color: #6ee7b7;
     }
 
+    .hack-combo-box {
+      transition: border-color 150ms, background 150ms;
+    }
+
+    .hack-combo-box[data-tier="1"] {
+      border-color: rgba(6, 182, 212, 0.55);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .hack-combo-box[data-tier="2"] {
+      border-color: rgba(245, 158, 11, 0.65);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .hack-combo-box[data-tier="3"] {
+      border-color: rgba(16, 185, 129, 0.72);
+      background: rgba(16, 185, 129, 0.11);
+    }
+
+    .hack-combo-box.combo-break {
+      border-color: rgba(239, 68, 68, 0.85);
+      background: rgba(239, 68, 68, 0.14);
+    }
+
+    .hack-combo-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .hack-combo-mult {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      transition: color 140ms, transform 140ms;
+    }
+
+    .hack-combo-box[data-tier="1"] .hack-combo-mult { color: var(--accent-cyan); }
+    .hack-combo-box[data-tier="2"] .hack-combo-mult { color: var(--accent-amber); }
+    .hack-combo-box[data-tier="3"] .hack-combo-mult { color: var(--accent-emerald); }
+    .hack-combo-box.combo-break .hack-combo-mult { color: var(--accent-red); }
+
+    .hack-combo-mult.pop {
+      animation: combo-pop 210ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hack-combo-segs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+      margin-bottom: 7px;
+    }
+
+    .combo-seg {
+      height: 5px;
+      border-radius: 2px;
+      background: rgba(148, 163, 184, 0.18);
+      transition: background 140ms, opacity 140ms;
+    }
+
+    .combo-seg.active-1 { background: var(--accent-cyan); }
+    .combo-seg.active-2 { background: var(--accent-amber); }
+    .combo-seg.active-3 { background: var(--accent-emerald); }
+
+    .hack-combo-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hack-combo-box[data-tier="2"] .hack-combo-meta,
+    .hack-combo-box[data-tier="3"] .hack-combo-meta {
+      color: var(--text-primary);
+    }
+
+    .hack-combo-box.combo-break .hack-combo-meta {
+      color: #fca5a5;
+    }
+
+    @keyframes combo-pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.28); }
+      100% { transform: scale(1); }
+    }
+
+    /* === HACKING GLITCH SCREEN OVERLAY === */
+    #hack-glitch-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      opacity: 0;
+      overflow: hidden;
+      --glitch-power: 1;
+    }
+
+    #hack-glitch-overlay.active {
+      opacity: 1;
+      animation: hack-glitch-fade 260ms ease-out forwards;
+    }
+
+    .glitch-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(6, 182, 212, 0.09) 0px,
+        rgba(6, 182, 212, 0.09) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      opacity: calc(0.3 + var(--glitch-power) * 0.18);
+    }
+
+    .glitch-rgb {
+      position: absolute;
+      inset: 0;
+      mix-blend-mode: screen;
+    }
+
+    .glitch-rgb-cyan {
+      border-left: calc(2px * var(--glitch-power)) solid rgba(6, 182, 212, 0.72);
+      border-right: calc(1px * var(--glitch-power)) solid rgba(6, 182, 212, 0.42);
+      background: linear-gradient(
+        90deg,
+        rgba(6, 182, 212, 0.16) 0%,
+        transparent 14%,
+        transparent 86%,
+        rgba(6, 182, 212, 0.12) 100%
+      );
+    }
+
+    .glitch-rgb-red {
+      border-right: calc(2px * var(--glitch-power)) solid rgba(239, 68, 68, 0.72);
+      border-left: calc(1px * var(--glitch-power)) solid rgba(245, 158, 11, 0.42);
+      background: linear-gradient(
+        90deg,
+        rgba(239, 68, 68, 0.12) 0%,
+        transparent 14%,
+        transparent 86%,
+        rgba(239, 68, 68, 0.16) 100%
+      );
+    }
+
+    #hack-glitch-overlay.active .glitch-rgb-cyan {
+      animation: hack-rgb-left 240ms steps(4, end) forwards;
+    }
+
+    #hack-glitch-overlay.active .glitch-rgb-red {
+      animation: hack-rgb-right 240ms steps(4, end) forwards;
+    }
+
+    .glitch-slice {
+      position: absolute;
+      left: -2%;
+      width: 104%;
+      height: calc(10px + var(--glitch-power) * 6px);
+      top: 28%;
+      background: linear-gradient(
+        90deg,
+        rgba(6, 182, 212, 0.28),
+        rgba(245, 158, 11, 0.18) 50%,
+        rgba(239, 68, 68, 0.28)
+      );
+      opacity: 0;
+    }
+
+    #hack-glitch-overlay.active .glitch-slice {
+      animation: hack-slice-jump 230ms steps(3, end) forwards;
+    }
+
+    .modal-box.glitch-shake {
+      animation: hack-modal-shake 220ms steps(4, end);
+    }
+
+    @keyframes hack-glitch-fade {
+      0% { opacity: 1; }
+      75% { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes hack-rgb-left {
+      0%   { transform: translate3d(calc(-3px * var(--glitch-power)), 0, 0); }
+      35%  { transform: translate3d(calc(2px * var(--glitch-power)), -1px, 0); }
+      70%  { transform: translate3d(calc(-2px * var(--glitch-power)), 1px, 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes hack-rgb-right {
+      0%   { transform: translate3d(calc(3px * var(--glitch-power)), 0, 0); }
+      35%  { transform: translate3d(calc(-2px * var(--glitch-power)), 1px, 0); }
+      70%  { transform: translate3d(calc(2px * var(--glitch-power)), -1px, 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes hack-slice-jump {
+      0%   { opacity: 0.9; transform: translate3d(calc(-8px * var(--glitch-power)), 0, 0); }
+      45%  { opacity: 0.75; transform: translate3d(calc(10px * var(--glitch-power)), 210px, 0); }
+      80%  { opacity: 0.5; transform: translate3d(calc(-5px * var(--glitch-power)), 340px, 0); }
+      100% { opacity: 0; transform: translate3d(0, 340px, 0); }
+    }
+
+    @keyframes hack-modal-shake {
+      0%   { transform: translate3d(calc(-2px * var(--glitch-power)), calc(1px * var(--glitch-power)), 0); }
+      33%  { transform: translate3d(calc(2.5px * var(--glitch-power)), calc(-1.5px * var(--glitch-power)), 0); }
+      66%  { transform: translate3d(calc(-1.5px * var(--glitch-power)), calc(-1px * var(--glitch-power)), 0); }
+      100% { transform: translate3d(0, 0, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #hack-glitch-overlay.active .glitch-rgb-cyan,
+      #hack-glitch-overlay.active .glitch-rgb-red,
+      #hack-glitch-overlay.active .glitch-slice,
+      .modal-box.glitch-shake,
+      .hack-combo-mult.pop {
+        animation: none !important;
+      }
+      #hack-glitch-overlay.active {
+        opacity: 0.35;
+      }
+    }
+
     /* === SHOP === */
     .shop-list {
       display: flex;
@@ -647,11 +961,410 @@
       font-size: 12px;
       color: var(--text-muted);
     }
+
+    /* === SETTINGS PANEL IN SYSTEM MODAL === */
+    .sys-settings {
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      background: rgba(9, 13, 22, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .settings-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rain-slider {
+      width: 100%;
+      accent-color: var(--accent-amber);
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: #131d30;
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 4px;
+      padding: 5px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 120ms, color 120ms, background 120ms;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent-cyan);
+      color: var(--text-primary);
+    }
+
+    .preset-btn.active {
+      border-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.16);
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+
+    /* === SANDBOX WORLD EDITOR === */
+    #editor-ui {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 25;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #editor-ui.open {
+      display: flex;
+    }
+
+    .editor-topbar {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      background: rgba(11, 16, 27, 0.94);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+      backdrop-filter: blur(8px);
+      flex-wrap: wrap;
+    }
+
+    .editor-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .editor-select,
+    .editor-input {
+      background: #131d30;
+      color: var(--text-primary);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .editor-select:focus,
+    .editor-input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .editor-status {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .editor-body {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 12px;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .editor-palette {
+      pointer-events: auto;
+      width: 248px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      background: rgba(11, 16, 27, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    .ed-sec-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+
+    .ed-tool-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .ed-tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #131d30;
+      color: var(--text-primary);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 4px;
+      padding: 6px 7px;
+      font-size: 11px;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: border-color 120ms, background 120ms;
+    }
+
+    .ed-tool-btn:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .ed-tool-btn.active {
+      border-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.16);
+      color: #fde68a;
+      font-weight: 600;
+    }
+
+    .ed-swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .ed-inspector {
+      pointer-events: auto;
+      width: 248px;
+      background: rgba(11, 16, 27, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 6px;
+      padding: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+      font-size: 11px;
+    }
+
+    .ed-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .ed-field label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .ed-row-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .ed-hint {
+      pointer-events: auto;
+      margin: 0 12px 10px 12px;
+      align-self: flex-end;
+      background: rgba(11, 16, 27, 0.84);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    #playtest-bar {
+      position: absolute;
+      bottom: 214px;
+      right: 16px;
+      z-index: 22;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(11, 16, 27, 0.9);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 6px;
+      padding: 6px 10px;
+      backdrop-filter: blur(6px);
+      transition: bottom 160ms ease;
+    }
+
+    #playtest-bar.visible {
+      display: flex;
+    }
+
+    /* === DYNAMIC MINIMAP HUD (bottom-right) === */
+    .minimap-panel {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      z-index: 15;
+      width: 208px;
+      background: rgba(11, 16, 27, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      pointer-events: auto;
+    }
+
+    .minimap-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 9px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .minimap-panel.collapsed .minimap-head {
+      border-bottom: none;
+    }
+
+    .minimap-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--accent-cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .minimap-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+    }
+
+    .minimap-key {
+      padding: 1px 5px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 3px;
+      background: #131d30;
+      color: var(--accent-amber);
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .minimap-body {
+      padding: 7px 9px 6px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .minimap-panel.collapsed .minimap-body {
+      display: none;
+    }
+
+    #minimap-canvas {
+      display: block;
+      width: 190px;
+      height: 140px;
+      border-radius: 4px;
+      background: #060a12;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .minimap-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .minimap-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .mm-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .json-textarea {
+      width: 100%;
+      height: 220px;
+      background: #080d16;
+      color: #a5f3fc;
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      border-radius: 5px;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.45;
+      resize: vertical;
+      outline: none;
+    }
+
+    .json-error {
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #fca5a5;
+      min-height: 16px;
+    }
   </style>
 </head>
 <body>
 <div id="game-root">
   <canvas id="world-canvas"></canvas>
+  <canvas id="rain-shader-canvas"></canvas>
 
   <!-- TOP HUD -->
   <div class="hud-top" id="hud-top" style="display:none;">
@@ -678,8 +1391,10 @@
       <div class="zone-title" id="hud-zone">Сектор 1 · Провулок «Синтез-7»</div>
       <div class="quest-text" id="hud-quest">Поговоріть з фіксером Мартою «Проксі» [E]</div>
       <div class="hud-actions">
+        <span class="autosave-indicator" id="hud-autosave"></span>
         <button class="btn-mini" id="btn-audio-toggle">Звук: Увімк</button>
         <button class="btn-mini" id="btn-save-game">Зберегти</button>
+        <button class="btn-mini" id="btn-settings-game">Налаштування</button>
         <button class="btn-mini" id="btn-pause-game">Пауза [Esc]</button>
       </div>
     </div>
@@ -691,8 +1406,8 @@
     <div class="combo-sub" id="combo-sub">COMBO</div>
   </div>
 
-  <!-- TOASTS -->
-  <div class="toast-stack" id="toast-stack"></div>
+  <!-- EVENT CONSOLE (HUD_UI) -->
+  <div class="event-console" id="event-console" style="display:none;" aria-live="polite"></div>
 
   <!-- BOTTOM QUICK-HACK & COMBAT STRIP -->
   <div class="hud-bottom" id="hud-bottom" style="display:none;">
@@ -717,6 +1432,13 @@
         <span class="skill-cost">45 RAM · Пробій щитів</span>
       </div>
     </div>
+    <div class="skill-slot" id="slot-thermal" data-skill="thermal">
+      <span class="skill-key">T</span>
+      <div class="skill-meta">
+        <span class="skill-name">Термо-зір</span>
+        <span class="skill-cost" id="thermal-slot-meta">Рів.1 · 4.6 RAM/с</span>
+      </div>
+    </div>
   </div>
 
   <!-- TITLE MODAL -->
@@ -737,11 +1459,14 @@
         <div class="ctrl-row"><span>Смарт-пістолет</span><span class="ctrl-key">L / Q</span></div>
         <div class="ctrl-row"><span>Діалог / Злам</span><span class="ctrl-key">E</span></div>
         <div class="ctrl-row"><span>Швидкі хаки</span><span class="ctrl-key">1 · 2 · 3</span></div>
+        <div class="ctrl-row"><span>Термо-зір (ІЧ-режим)</span><span class="ctrl-key">T</span></div>
+        <div class="ctrl-row"><span>Міні-карта сектора</span><span class="ctrl-key">M</span></div>
         <div class="ctrl-row"><span>Пауза</span><span class="ctrl-key">Esc</span></div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn-primary" id="btn-start-new">Почати рейд</button>
         <button class="btn-secondary" id="btn-continue-save" style="display:none;">Продовжити збереження</button>
+        <button class="btn-secondary" id="btn-open-editor">Редактор світу (Sandbox)</button>
       </div>
     </div>
   </div>
@@ -796,8 +1521,20 @@
               <div class="bar-label" style="width:auto;">БУФЕР ЕКСПЛОЙТУ</div>
               <div class="hack-seq" id="hack-target-seq"></div>
             </div>
+            <div class="hack-box hack-combo-box" id="hack-combo-box" data-tier="0">
+              <div class="hack-combo-head">
+                <div class="bar-label" style="width:auto;">ЛАНЦЮЖОК ЕКСПЛОЙТУ</div>
+                <div class="hack-combo-mult" id="hack-combo-mult">0x</div>
+              </div>
+              <div class="hack-combo-segs" id="hack-combo-segs">
+                <span class="combo-seg"></span>
+                <span class="combo-seg"></span>
+                <span class="combo-seg"></span>
+              </div>
+              <div class="hack-combo-meta" id="hack-combo-meta">Очікування першого токена</div>
+            </div>
             <div class="hack-box" style="font-size:12px; color:#cbd5e1; line-height:1.45;">
-              Натискайте підсвічені клітинки рядка чи стовпця, щоб зібрати потрібні токени. Уникайте червоних пасток <strong>ICE</strong> (+25% тривоги).
+              Натискайте підсвічені клітинки рядка чи стовпця, щоб зібрати потрібні токени. Серія знижує трейс ШІ та дає бонусні кредити; помилка чи <strong>ICE</strong> скидають ланцюжок.
             </div>
           </div>
         </div>
@@ -830,6 +1567,19 @@
       </div>
       <div class="modal-body">
         <p id="sys-body" style="margin:0 0 18px 0; font-size:14px; line-height:1.6; color:#cbd5e1;"></p>
+        <div id="sys-settings" class="sys-settings" style="display:none;">
+          <div class="settings-row">
+            <span>Інтенсивність дощу (GLSL шейдер)</span>
+            <span class="settings-val" id="rain-val-label">65%</span>
+          </div>
+          <input type="range" id="rain-slider" class="rain-slider" min="0" max="100" step="1" value="65" aria-label="Інтенсивність дощу" />
+          <div class="preset-row" id="rain-presets">
+            <button type="button" class="preset-btn" data-rain="0">Вимк 0%</button>
+            <button type="button" class="preset-btn" data-rain="30">Мряка 30%</button>
+            <button type="button" class="preset-btn" data-rain="65">Дощ 65%</button>
+            <button type="button" class="preset-btn" data-rain="100">Злива 100%</button>
+          </div>
+        </div>
         <div id="sys-stats" style="display:none; margin-bottom:18px; font-family:var(--font-mono); font-size:12px; background:rgba(9,13,22,0.7); padding:12px; border-radius:5px; border:1px solid rgba(148,163,184,0.18);"></div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn-primary" id="btn-sys-primary">Продовжити</button>
@@ -837,6 +1587,160 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- PLAYTEST RETURN BAR (shown only during Sandbox Playtest) -->
+  <div id="playtest-bar">
+    <span style="font-family:var(--font-mono); font-size:11px; color:#fbbf24;">PLAYTEST</span>
+    <button class="btn-mini" id="btn-return-editor" style="border-color:var(--accent-amber); color:#fde68a;">До редактора</button>
+  </div>
+
+  <!-- DYNAMIC MINIMAP HUD -->
+  <div class="minimap-panel" id="minimap-panel">
+    <div class="minimap-head" id="minimap-toggle" title="Згорнути або розгорнути міні-карту [M]">
+      <span class="minimap-title" id="minimap-zone-tag">РАДАР</span>
+      <span class="minimap-meta">
+        <span id="minimap-coords">0,0</span>
+        <span class="minimap-key">M</span>
+      </span>
+    </div>
+    <div class="minimap-body">
+      <canvas id="minimap-canvas" width="190" height="140"></canvas>
+      <div class="minimap-legend">
+        <span class="minimap-legend-item"><span class="mm-dot" style="background:#f59e0b"></span>Ціль</span>
+        <span class="minimap-legend-item"><span class="mm-dot" style="background:#22d3ee"></span>Термінал</span>
+        <span class="minimap-legend-item"><span class="mm-dot" style="background:#ef4444"></span>Ворог</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SANDBOX WORLD EDITOR OVERLAY -->
+  <div id="editor-ui">
+    <div class="editor-topbar">
+      <div class="editor-group">
+        <span style="font-family:var(--font-display); font-weight:700; font-size:14px; color:var(--accent-amber); white-space:nowrap;">Редактор світу</span>
+        <select id="ed-zone-select" class="editor-select" aria-label="Вибір сектора"></select>
+        <input id="ed-zone-title" class="editor-input" style="width:200px;" placeholder="Назва сектора" aria-label="Назва сектора" />
+        <button type="button" class="btn-mini" id="btn-ed-new-zone">Новий сектор</button>
+        <button type="button" class="btn-mini" id="btn-ed-del-zone">Видалити</button>
+      </div>
+      <div class="editor-group">
+        <span class="editor-status" id="ed-status">Схема v1 · 0, 0</span>
+        <button type="button" class="btn-mini" id="btn-ed-export">Експорт JSON</button>
+        <button type="button" class="btn-mini" id="btn-ed-import">Імпорт JSON</button>
+        <button type="button" class="btn-mini" id="btn-ed-reset">Скинути світ</button>
+        <button type="button" class="btn-mini" id="btn-ed-menu">До меню</button>
+        <button type="button" class="btn-primary" id="btn-ed-playtest" style="padding:6px 14px; font-size:12px;">Playtest</button>
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <div class="editor-palette" id="editor-palette">
+        <div>
+          <div class="ed-sec-title">ТАЙЛИ МАПИ</div>
+          <div class="ed-tool-grid" id="ed-tiles-grid"></div>
+        </div>
+        <div>
+          <div class="ed-sec-title">ВОРОГИ ТА ЛУТ</div>
+          <div class="ed-tool-grid" id="ed-entities-grid"></div>
+        </div>
+        <div>
+          <div class="ed-sec-title">ОБ'ЄКТИ ТА ЗОНИ</div>
+          <div class="ed-tool-grid" id="ed-objects-grid"></div>
+        </div>
+      </div>
+
+      <div class="ed-inspector" id="editor-inspector">
+        <div class="ed-sec-title" id="ed-insp-title">ІНСПЕКТОР СЕКТОРА</div>
+        <div id="ed-zone-dims" style="font-family:var(--font-mono); color:var(--text-muted);">Розмір: 16 × 12</div>
+        <div id="ed-portal-fields" style="display:none; flex-direction:column; gap:7px; border-top:1px solid rgba(148,163,184,0.16); padding-top:8px;">
+          <div class="ed-sec-title" style="margin-bottom:0; color:var(--accent-amber);">ПАРАМЕТРИ ПОРТАЛУ</div>
+          <div class="ed-field">
+            <label for="ed-portal-target">Цільовий сектор</label>
+            <select id="ed-portal-target" class="editor-select"></select>
+          </div>
+          <div class="ed-row-2">
+            <div class="ed-field">
+              <label for="ed-portal-sx">Spawn X</label>
+              <input id="ed-portal-sx" type="number" step="0.5" min="1" max="26" class="editor-input" value="2" />
+            </div>
+            <div class="ed-field">
+              <label for="ed-portal-sy">Spawn Y</label>
+              <input id="ed-portal-sy" type="number" step="0.5" min="1" max="26" class="editor-input" value="5" />
+            </div>
+          </div>
+          <div class="ed-field">
+            <label for="ed-portal-flag">Умова доступу</label>
+            <select id="ed-portal-flag" class="editor-select">
+              <option value="">Без блокування</option>
+              <option value="vaultGateOpen">Потрібен злам шлюзу</option>
+              <option value="hasSectorKey">Потрібен Data-Key</option>
+            </select>
+          </div>
+          <button type="button" class="btn-mini" id="btn-ed-apply-portal">Оновити портал</button>
+        </div>
+
+        <div id="ed-new-zone-form" style="display:none; flex-direction:column; gap:7px; border-top:1px solid rgba(148,163,184,0.16); padding-top:8px;">
+          <div class="ed-sec-title" style="margin-bottom:0; color:#34d399;">СТВОРИТИ НОВИЙ СЕКТОР</div>
+          <div class="ed-field">
+            <label for="ed-nz-id">ID сектора (латиниця)</label>
+            <input id="ed-nz-id" class="editor-input" placeholder="sector_4" />
+          </div>
+          <div class="ed-field">
+            <label for="ed-nz-title">Назва</label>
+            <input id="ed-nz-title" class="editor-input" placeholder="Сектор 4 · Неон-Доки" />
+          </div>
+          <div class="ed-row-2">
+            <div class="ed-field">
+              <label for="ed-nz-w">Ширина (10–24)</label>
+              <input id="ed-nz-w" type="number" min="10" max="24" class="editor-input" value="16" />
+            </div>
+            <div class="ed-field">
+              <label for="ed-nz-h">Висота (10–20)</label>
+              <input id="ed-nz-h" type="number" min="10" max="20" class="editor-input" value="12" />
+            </div>
+          </div>
+          <div class="ed-row-2">
+            <button type="button" class="btn-mini" id="btn-ed-nz-create" style="border-color:#10b981; color:#6ee7b7;">Створити</button>
+            <button type="button" class="btn-mini" id="btn-ed-nz-cancel">Скасувати</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ed-hint">ЛКМ: малювати / ставити · ПКМ або WASD: камера · Playtest запускає поточний сектор без втрати кампанії</div>
+  </div>
+
+  <!-- EDITOR JSON EXPORT / IMPORT MODAL -->
+  <div class="modal-backdrop" id="modal-editor-json" style="z-index:45;">
+    <div class="modal-box" style="max-width:640px;">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title" id="ed-json-title">Експорт / Імпорт світу (JSON)</h3>
+          <div class="modal-sub">Версія формату: schemaVersion 1</div>
+        </div>
+        <button type="button" class="btn-mini" id="btn-ed-json-close">Закрити</button>
+      </div>
+      <div class="modal-body">
+        <div id="ed-json-file-row" style="display:none; margin-bottom:10px; align-items:center; gap:10px; flex-wrap:wrap;">
+          <input type="file" id="ed-json-file" accept=".json,application/json" style="font-size:12px; color:var(--text-muted);" />
+        </div>
+        <textarea id="ed-json-text" class="json-textarea" spellcheck="false"></textarea>
+        <div class="json-error" id="ed-json-error"></div>
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="btn-ed-json-primary">Застосувати</button>
+          <button type="button" class="btn-secondary" id="btn-ed-json-copy">Копіювати JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HACKING GLITCH OVERLAY -->
+  <div id="hack-glitch-overlay" aria-hidden="true">
+    <div class="glitch-scanlines"></div>
+    <div class="glitch-rgb glitch-rgb-cyan"></div>
+    <div class="glitch-rgb glitch-rgb-red"></div>
+    <div class="glitch-slice"></div>
   </div>
 </div>
 
@@ -871,7 +1775,8 @@
     SKILLS: {
       inject: { cost: 30, cooldown: 3.0, range: 280 },
       overclock: { cost: 40, cooldown: 8.0, duration: 3.8 },
-      emp: { cost: 45, cooldown: 5.0, radius: 175, dmg: 32 }
+      emp: { cost: 45, cooldown: 5.0, radius: 175, dmg: 32 },
+      thermal: { minRam: 8, baseDrain: 4.6, drainReductionPerTier: 0.9 }
     },
     SHOP_ITEMS: [
       {
@@ -909,6 +1814,15 @@
         costKarma: 0,
         maxRank: 2,
         apply(p) { p.gunBonus += 10; p.ammo = Math.min(p.maxAmmo, p.ammo + 6); }
+      },
+      {
+        id: "thermal_optics",
+        name: "Кібер-оптика «ІЧ-Сенсор»",
+        desc: "Підвищує рівень Термо-зору [T]: скрині, схованки й вектори загроз",
+        costCredits: 95,
+        costKarma: 0,
+        maxRank: 2,
+        apply() {}
       },
       {
         id: "trauma_gel",
@@ -1059,25 +1973,72 @@
 
   /* ============================================================================
    * MODULE 03: STATE_STORE
-   * Dependencies: CONFIG
+   * Dependencies: CONFIG, EVENT_BUS
    * Exports: createStateStore({ config, bus })
-   * Seam note: Central state container + serialization seam
+   * Seam note: Central state container + reactive localStorage autosave seam
    * ========================================================================== */
   function createStateStore({ config, bus }) {
     const SAVE_KEY = "shadowrun_2026_save_v1";
+    const SETTINGS_KEY = "shadowrun_2026_settings_v1";
+
+    function loadSettings() {
+      const defaults = { rainIntensity: 0.65, minimapVisible: true };
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return defaults;
+        const parsed = JSON.parse(raw);
+        const rain = Number(parsed?.rainIntensity);
+        return {
+          rainIntensity: Number.isFinite(rain) ? Math.max(0, Math.min(1, rain)) : 0.65,
+          minimapVisible: parsed?.minimapVisible !== false
+        };
+      } catch {
+        return defaults;
+      }
+    }
+
+    const settings = loadSettings();
+
+    function getSetting(key) {
+      return settings[key];
+    }
+
+    function setSetting(key, value, { silent = false } = {}) {
+      if (key === "rainIntensity") {
+        const clamped = Math.max(0, Math.min(1, Number(value) || 0));
+        settings.rainIntensity = clamped;
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch {}
+        bus.emit("settings:rainChanged", { value: clamped, silent });
+      } else if (key === "minimapVisible") {
+        settings.minimapVisible = Boolean(value);
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch {}
+        bus.emit("settings:minimapChanged", { value: settings.minimapVisible });
+      }
+    }
 
     function createInitialState() {
       return {
-        mode: "TITLE", // TITLE | PLAYING | DIALOGUE | HACKING | SHOP | PAUSED | GAMEOVER | VICTORY
+        mode: "TITLE", // TITLE | PLAYING | DIALOGUE | HACKING | SHOP | PAUSED | GAMEOVER | VICTORY | EDITOR
         zoneId: "alley",
         time: 0,
         hitStop: 0,
         shakeTime: 0,
         shakeMag: 0,
         overclockTimer: 0,
+        thermalActive: false,
+        playtestMode: false,
         questText: "Поговоріть з фіксером Мартою «Проксі» [E] або очистіть провулок.",
         unlockedKeywords: ["contract", "doc_shop", "cyberware_2026", "cache_help"],
         askedKeywords: [],
+        usedTerminals: [],
+        discoveredTerminals: [],
+        exploredTiles: {},
+        destroyedEntityIds: [],
+        alliedEntityIds: [],
         flags: {
           gotContract: false,
           cacheRewarded: false,
@@ -1148,21 +2109,53 @@
     }
 
     let state = createInitialState();
+    let autosaveQueued = false;
+    const exploredSets = new Map();
+
+    function rebuildExploredCache() {
+      exploredSets.clear();
+      const et = state.exploredTiles || {};
+      for (const [zid, arr] of Object.entries(et)) {
+        if (Array.isArray(arr)) {
+          exploredSets.set(zid, new Set(arr));
+        }
+      }
+    }
 
     function hasSave() {
       try { return Boolean(localStorage.getItem(SAVE_KEY)); } catch { return false; }
     }
 
-    function save() {
+    function canPersistRun() {
+      return (
+        !state.playtestMode &&
+        state.player.hp > 0 &&
+        !state.flags.extracted &&
+        state.mode !== "TITLE" &&
+        state.mode !== "EDITOR" &&
+        state.mode !== "GAMEOVER" &&
+        state.mode !== "VICTORY"
+      );
+    }
+
+    function save({ silent = false } = {}) {
       try {
+        if (!canPersistRun()) return false;
+        const savedAt = Date.now();
         const snapshot = {
           zoneId: state.zoneId,
           questText: state.questText,
           unlockedKeywords: state.unlockedKeywords,
           askedKeywords: state.askedKeywords,
+          usedTerminals: state.usedTerminals,
+          discoveredTerminals: state.discoveredTerminals,
+          exploredTiles: state.exploredTiles,
+          destroyedEntityIds: state.destroyedEntityIds,
+          alliedEntityIds: state.alliedEntityIds,
           flags: state.flags,
           stats: state.stats,
           shopPurchases: state.shopPurchases,
+          savedAt,
           player: {
             x: state.player.x,
             y: state.player.y,
@@ -1172,6 +2165,7 @@
             maxRam: state.player.maxRam,
             ramRegenBonus: state.player.ramRegenBonus,
             ammo: state.player.ammo,
+            maxAmmo: state.player.maxAmmo,
             credits: state.player.credits,
             karma: state.player.karma,
             meleeBonus: state.player.meleeBonus,
@@ -1179,11 +2173,23 @@
           }
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot));
-        bus.emit("state:toast", "Гру збережено в пам'ять");
+        bus.emit("state:autosaved", { silent, savedAt });
+        if (!silent) {
+          bus.emit("state:toast", "Гру збережено в пам'ять");
+        }
         return true;
       } catch {
         return false;
       }
+    }
+
+    function scheduleAutoSave() {
+      if (autosaveQueued || !canPersistRun()) return;
+      autosaveQueued = true;
+      queueMicrotask(() => {
+        autosaveQueued = false;
+        save({ silent: true });
+      });
     }
 
     function load() {
@@ -1194,25 +2200,134 @@
         state = createInitialState();
         state.zoneId = snap.zoneId || "alley";
         state.questText = snap.questText || state.questText;
-        state.unlockedKeywords = snap.unlockedKeywords || state.unlockedKeywords;
-        state.askedKeywords = snap.askedKeywords || [];
-        state.flags = { ...state.flags, ...(snap.flags || {}) };
+        state.unlockedKeywords = Array.isArray(snap.unlockedKeywords) ? snap.unlockedKeywords : state.unlockedKeywords;
+        state.askedKeywords = Array.isArray(snap.askedKeywords) ? snap.askedKeywords : [];
+        state.usedTerminals = Array.isArray(snap.usedTerminals) ? snap.usedTerminals : [];
+        state.discoveredTerminals = Array.isArray(snap.discoveredTerminals) ? snap.discoveredTerminals : [];
+        state.exploredTiles = snap.exploredTiles && typeof snap.exploredTiles === "object" ? snap.exploredTiles : {};
+        state.destroyedEntityIds = Array.isArray(snap.destroyedEntityIds) ? snap.destroyedEntityIds : [];
+        state.alliedEntityIds = Array.isArray(snap.alliedEntityIds) ? snap.alliedEntityIds : [];
+        state.flags = { ...state.flags, ...(snap.flags || {}), extracted: false };
         state.stats = { ...state.stats, ...(snap.stats || {}) };
         state.shopPurchases = snap.shopPurchases || {};
         Object.assign(state.player, snap.player || {});
+        state.player.hp = Math.max(1, Math.min(state.player.maxHp, state.player.hp || config.PLAYER_BASE.maxHp));
         state.player.zone = state.zoneId;
+        rebuildExploredCache();
+        bus.emit("state:loaded", snap);
         return true;
       } catch {
         return false;
       }
     }
 
+    function markTileExplored(zoneId, tx, ty) {
+      if (!zoneId) return false;
+      const key = `${tx},${ty}`;
+      let set = exploredSets.get(zoneId);
+      if (!set) {
+        set = new Set();
+        exploredSets.set(zoneId, set);
+      }
+      if (set.has(key)) return false;
+      set.add(key);
+      if (!Array.isArray(state.exploredTiles[zoneId])) state.exploredTiles[zoneId] = [];
+      state.exploredTiles[zoneId].push(key);
+      return true;
+    }
+
+    function isTileExplored(zoneId, tx, ty) {
+      return Boolean(exploredSets.get(zoneId)?.has(`${tx},${ty}`));
+    }
+
+    function markTerminalDiscovered(id) {
+      if (!id || state.discoveredTerminals.includes(id)) return false;
+      state.discoveredTerminals.push(id);
+      return true;
+    }
+
+    function isTerminalDiscovered(id) {
+      return state.discoveredTerminals.includes(id);
+    }
+
+    function markTerminalUsed(id) {
+      if (id && !state.usedTerminals.includes(id)) {
+        state.usedTerminals.push(id);
+      }
+    }
+
+    function isTerminalUsed(id) {
+      return state.usedTerminals.includes(id);
+    }
+
+    function markEntityDestroyed(id) {
+      if (id && !state.destroyedEntityIds.includes(id)) {
+        state.destroyedEntityIds.push(id);
+      }
+    }
+
+    function isEntityDestroyed(id) {
+      return state.destroyedEntityIds.includes(id);
+    }
+
+    function markEntityAllied(id) {
+      if (id && !state.alliedEntityIds.includes(id)) {
+        state.alliedEntityIds.push(id);
+      }
+    }
+
+    function isEntityAllied(id) {
+      return state.alliedEntityIds.includes(id);
+    }
+
+    function getThermalLevel() {
+      const purchases = state.shopPurchases || {};
+      const opticRank = purchases.thermal_optics || 0;
+      const implantSum =
+        (purchases.kinetic_knuckles || 0) +
+        (purchases.subdermal_armor || 0) +
+        (purchases.neural_ram || 0) +
+        (purchases.smart_capacitor || 0) +
+        opticRank;
+      let level = 1;
+      if (opticRank >= 1 || implantSum >= 2) level = 2;
+      if (opticRank >= 2 || (opticRank >= 1 && implantSum >= 4)) level = 3;
+      return level;
+    }
+
+    // Reactive autosave subscriptions across all state-mutating domain events
+    [
+      "player:damaged",
+      "entity:killed",
+      "crate:destroyed",
+      "pickup:reward",
+      "quest:update",
+      "zone:change",
+      "hack:success",
+      "shop:purchase",
+      "dialogue:choice",
+      "state:dirty"
+    ].forEach((ev) => bus.on(ev, scheduleAutoSave));
+
     return {
       get() { return state; },
-      reset() { state = createInitialState(); return state; },
+      reset() { state = createInitialState(); rebuildExploredCache(); return state; },
       hasSave,
       save,
-      load
+      load,
+      getSetting,
+      setSetting,
+      getThermalLevel,
+      markTileExplored,
+      isTileExplored,
+      markTerminalDiscovered,
+      isTerminalDiscovered,
+      markTerminalUsed,
+      isTerminalUsed,
+      markEntityDestroyed,
+      isEntityDestroyed,
+      markEntityAllied,
+      isEntityAllied
     };
   }
 
@@ -1344,6 +2459,10 @@
     bus.on("combat:shoot", () => tone({ freq: 720, endFreq: 160, dur: 0.09, type: "square", vol: 0.09 }));
     bus.on("combat:emp", () => tone({ freq: 520, endFreq: 55, dur: 0.3, type: "sawtooth", vol: 0.16 }));
     bus.on("combat:overclock", () => tone({ freq: 260, endFreq: 680, dur: 0.25, type: "sine", vol: 0.11 }));
+    bus.on("combat:thermal", ({ active } = {}) => {
+      if (active) tone({ freq: 340, endFreq: 860, dur: 0.13, type: "sine", vol: 0.09 });
+      else tone({ freq: 620, endFreq: 240, dur: 0.11, type: "triangle", vol: 0.08 });
+    });
     bus.on("combat:inject", () => {
       tone({ freq: 620, endFreq: 940, dur: 0.08, type: "square", vol: 0.07 });
       setTimeout(() => tone({ freq: 940, endFreq: 480, dur: 0.1, type: "triangle", vol: 0.07 }), 70);
@@ -1353,6 +2472,11 @@
       setTimeout(() => tone({ freq: 660, endFreq: 660, dur: 0.14, type: "sine", vol: 0.12 }), 90);
     });
     bus.on("hack:fail", () => tone({ freq: 180, endFreq: 70, dur: 0.24, type: "sawtooth", vol: 0.14 }));
+    bus.on("hack:combo", ({ combo = 1 } = {}) => {
+      const base = 460 + Math.min(4, combo) * 115;
+      tone({ freq: base, endFreq: base * 1.42, dur: 0.1, type: "triangle", vol: 0.1 });
+    });
+    bus.on("hack:comboBreak", () => tone({ freq: 210, endFreq: 85, dur: 0.15, type: "square", vol: 0.1 }));
     bus.on("pickup:reward", () => tone({ freq: 580, endFreq: 880, dur: 0.12, type: "triangle", vol: 0.09 }));
 
     return {
@@ -1374,7 +2498,15 @@
    * ========================================================================== */
   function createWorldMap({ config, store, bus }) {
     // Tile legend: 0=asphalt, 1=sidewalk, 2=conductive puddle, 3=wall/obstacle, 4=hazard stripe, 5=extraction
-    const ZONES = {
+    const WORLD_STORAGE_KEY = "shadowrun_2026_world_v1";
+    const WORLD_SCHEMA_VERSION = 1;
+
+    function cloneJSON(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    const BUILTIN_META = { startZone: "alley", startX: 3.5, startY: 6.5 };
+    const BUILTIN_ZONES = {
       alley: {
         id: "alley",
         title: "Сектор 1 · Провулок «Синтез-7»",
@@ -1405,6 +2537,7 @@
         ],
         terminals: [
           { id: "vending_alley", x: 8.6, y: 1.7, type: "VENDING", label: "Автомат рамену [E] · 30 ₵" },
+          { id: "stash_alley", x: 13.4, y: 8.3, type: "STASH", hidden: true, label: "Прихований тайник [E]", rewardCredits: 75, rewardAmmo: 4, rewardKarma: 1 },
           { id: "gate_alley_transit", x: 14.3, y: 4.5, type: "PORTAL", targetZone: "transit", spawnX: 1.6, spawnY: 5.0, label: "Шлюз у Сектор 2 [E]" }
         ],
         crates: [
@@ -1444,6 +2577,7 @@
         npcs: [],
         terminals: [
           { id: "portal_back_alley", x: 1.1, y: 4.5, type: "PORTAL", targetZone: "alley", spawnX: 13.7, spawnY: 4.8, label: "Назад у Провулок [E]" },
+          { id: "stash_transit", x: 1.9, y: 1.8, type: "STASH", hidden: true, label: "Прихований тайник [E]", rewardCredits: 95, rewardAmmo: 5, rewardKarma: 1 },
           { id: "hack_crypto_transit", x: 4.2, y: 1.7, type: "HACK_CRYPTO", label: "Крипто-вузол (+160 ₵) [E]" },
           { id: "hack_vault_gate", x: 13.2, y: 3.4, type: "HACK_GATE", gateFlag: "vaultGateOpen", label: "Злам замка Сховища [E]" },
           { id: "portal_to_vault", x: 14.3, y: 4.5, type: "PORTAL", targetZone: "vault", spawnX: 1.8, spawnY: 5.0, requiresFlag: "vaultGateOpen", label: "У Дата-Сховище Kuroda [E]" }
@@ -1485,6 +2619,7 @@
         npcs: [],
         terminals: [
           { id: "portal_back_transit", x: 1.1, y: 4.5, type: "PORTAL", targetZone: "transit", spawnX: 13.5, spawnY: 4.8, label: "Назад у Транзит [E]" },
+          { id: "stash_vault", x: 13.7, y: 8.4, type: "STASH", hidden: true, label: "Сейф-тайник Kuroda [E]", rewardCredits: 120, rewardAmmo: 6, rewardKarma: 2 },
           { id: "hack_vault_turrets", x: 4.6, y: 1.8, type: "HACK_TURRETS", label: "Перехопити турелі залу [E]" },
           { id: "extract_chimera", x: 12.8, y: 5.5, type: "EXTRACT", label: "Завантажити ядро «Хімера» [E]" }
         ],
@@ -1502,7 +2637,176 @@
       }
     };
 
-    const usedTerminals = new Set();
+    const ZONES = cloneJSON(BUILTIN_ZONES);
+    let worldMeta = cloneJSON(BUILTIN_META);
+    let worldExtensions = { dialogues: {}, quests: {}, balance: {} };
+
+    function sanitizeZone(zoneId, rawZone) {
+      if (!rawZone || typeof rawZone !== "object" || !Array.isArray(rawZone.grid) || rawZone.grid.length < 4) {
+        throw new Error(`Некоректна геометрія сектора "${zoneId}"`);
+      }
+      const height = Math.max(8, Math.min(24, Number(rawZone.height) || rawZone.grid.length));
+      const width = Math.max(8, Math.min(28, Number(rawZone.width) || rawZone.grid[0]?.length || 16));
+      const grid = Array.from({ length: height }, (_, y) =>
+        Array.from({ length: width }, (_, x) => {
+          const v = Number(rawZone.grid?.[y]?.[x]);
+          return Number.isInteger(v) && v >= 0 && v <= 5 ? v : (y === 0 || y === height - 1 || x === 0 || x === width - 1 ? 3 : 0);
+        })
+      );
+      return {
+        id: String(rawZone.id || zoneId),
+        title: String(rawZone.title || zoneId),
+        width,
+        height,
+        grid,
+        signs: Array.isArray(rawZone.signs) ? cloneJSON(rawZone.signs) : [],
+        npcs: Array.isArray(rawZone.npcs) ? cloneJSON(rawZone.npcs) : [],
+        terminals: Array.isArray(rawZone.terminals) ? cloneJSON(rawZone.terminals) : [],
+        crates: Array.isArray(rawZone.crates) ? cloneJSON(rawZone.crates) : [],
+        spawns: Array.isArray(rawZone.spawns) ? cloneJSON(rawZone.spawns) : []
+      };
+    }
+
+    function normalizeWorldData(raw) {
+      if (!raw || typeof raw !== "object") {
+        throw new Error("Очікується JSON-об'єкт світу");
+      }
+      const ver = raw.schemaVersion == null ? 1 : Number(raw.schemaVersion);
+      if (!Number.isFinite(ver) || ver < 1 || ver > WORLD_SCHEMA_VERSION) {
+        throw new Error(`Непідтримувана версія формату: ${raw.schemaVersion}`);
+      }
+      const rawZones = raw.zones && typeof raw.zones === "object" ? raw.zones : raw;
+      const entries = Object.entries(rawZones).filter(([, z]) => z && typeof z === "object" && Array.isArray(z.grid));
+      if (entries.length === 0) {
+        throw new Error("У JSON не знайдено жодного коректного сектора");
+      }
+      const zones = {};
+      for (const [zid, z] of entries) {
+        const cleanId = String(zid).replace(/[^a-zA-Z0-9_-]/g, "_") || "sector_1";
+        zones[cleanId] = sanitizeZone(cleanId, z);
+      }
+      const firstId = Object.keys(zones)[0];
+      const rawMeta = raw.meta && typeof raw.meta === "object" ? raw.meta : BUILTIN_META;
+      const startZone = zones[rawMeta.startZone] ? rawMeta.startZone : firstId;
+      const sz = zones[startZone];
+      const startX = Math.max(1.2, Math.min(sz.width - 1.2, Number(rawMeta.startX) || 2.5));
+      const startY = Math.max(1.2, Math.min(sz.height - 1.2, Number(rawMeta.startY) || 2.5));
+      const ext = raw.extensions && typeof raw.extensions === "object" ? cloneJSON(raw.extensions) : {};
+      return {
+        schemaVersion: WORLD_SCHEMA_VERSION,
+        meta: { startZone, startX, startY },
+        zones,
+        extensions: {
+          dialogues: ext.dialogues || {},
+          quests: ext.quests || {},
+          balance: ext.balance || {}
+        }
+      };
+    }
+
+    function applyNormalizedWorld(norm) {
+      for (const key of Object.keys(ZONES)) delete ZONES[key];
+      Object.assign(ZONES, cloneJSON(norm.zones));
+      worldMeta = cloneJSON(norm.meta);
+      worldExtensions = cloneJSON(norm.extensions);
+    }
+
+    function exportWorldData() {
+      return {
+        schemaVersion: WORLD_SCHEMA_VERSION,
+        meta: cloneJSON(worldMeta),
+        zones: cloneJSON(ZONES),
+        extensions: cloneJSON(worldExtensions)
+      };
+    }
+
+    function saveWorldToStorage() {
+      try {
+        localStorage.setItem(WORLD_STORAGE_KEY, JSON.stringify(exportWorldData()));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function importWorldData(raw, { persist = true } = {}) {
+      const norm = normalizeWorldData(raw);
+      applyNormalizedWorld(norm);
+      if (persist) saveWorldToStorage();
+      bus.emit("world:updated", { zoneIds: Object.keys(ZONES) });
+      return norm;
+    }
+
+    function resetWorldData() {
+      applyNormalizedWorld({
+        schemaVersion: WORLD_SCHEMA_VERSION,
+        meta: BUILTIN_META,
+        zones: BUILTIN_ZONES,
+        extensions: { dialogues: {}, quests: {}, balance: {} }
+      });
+      try {
+        localStorage.removeItem(WORLD_STORAGE_KEY);
+      } catch {}
+      bus.emit("world:updated", { zoneIds: Object.keys(ZONES) });
+    }
+
+    function addZone({ id, title, width = 16, height = 12 }) {
+      const cleanId = String(id || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "_");
+      if (!cleanId) throw new Error("Вкажіть латинський ID сектора");
+      if (ZONES[cleanId]) throw new Error(`Сектор "${cleanId}" вже існує`);
+      const w = Math.max(10, Math.min(24, Math.floor(Number(width) || 16)));
+      const h = Math.max(10, Math.min(20, Math.floor(Number(height) || 12)));
+      const grid = Array.from({ length: h }, (_, y) =>
+        Array.from({ length: w }, (_, x) => {
+          if (y === 0 || y === h - 1 || x === 0 || x === w - 1) return 3;
+          if (y === 1 || y === h - 2 || x === 1 || x === w - 2) return 1;
+          return 0;
+        })
+      );
+      ZONES[cleanId] = {
+        id: cleanId,
+        title: String(title || cleanId).trim() || cleanId,
+        width: w,
+        height: h,
+        signs: [],
+        grid,
+        npcs: [],
+        terminals: [],
+        crates: [],
+        spawns: []
+      };
+      saveWorldToStorage();
+      bus.emit("world:updated", { zoneIds: Object.keys(ZONES) });
+      return ZONES[cleanId];
+    }
+
+    function deleteZone(zoneId) {
+      const ids = Object.keys(ZONES);
+      if (ids.length <= 1) throw new Error("Неможливо видалити останній сектор");
+      if (!ZONES[zoneId]) return false;
+      delete ZONES[zoneId];
+      const fallbackId = Object.keys(ZONES)[0];
+      if (worldMeta.startZone === zoneId) {
+        worldMeta.startZone = fallbackId;
+        worldMeta.startX = 2.5;
+        worldMeta.startY = 2.5;
+      }
+      saveWorldToStorage();
+      bus.emit("world:updated", { zoneIds: Object.keys(ZONES) });
+      return fallbackId;
+    }
+
+    // Load persisted custom world automatically on startup if present
+    try {
+      const savedWorldRaw = localStorage.getItem(WORLD_STORAGE_KEY);
+      if (savedWorldRaw) {
+        const parsed = JSON.parse(savedWorldRaw);
+        applyNormalizedWorld(normalizeWorldData(parsed));
+      }
+    } catch {}
 
     function worldToScreen(wx, wy, cam) {
       const sx = (wx - wy) * (config.TILE_W * 0.5);
@@ -1565,6 +2869,7 @@
 
       // Crates
       for (const c of z.crates) {
+        if (store.isEntityDestroyed(c.id)) continue;
         if (!state.entities.some(e => e.id === c.id)) {
           state.entities.push({
             id: c.id,
@@ -1589,9 +2894,14 @@
       // Enemies
       z.spawns.forEach((sp, idx) => {
         const uid = `${zoneId}_en_${idx}`;
+        if (store.isEntityDestroyed(uid)) return;
         if (sp.kind === "boss" && state.flags.bossDefeated) return;
         if (state.entities.some(e => e.id === uid)) return;
         const arch = makeEnemyArchetype(uid, zoneId, sp.kind, sp.x, sp.y);
+        if (store.isEntityAllied(uid)) {
+          arch.team = "ally";
+          arch.hackedTimer = 9999;
+        }
         arch._spawned = true;
         state.entities.push(arch);
       });
@@ -1634,6 +2944,10 @@
     }
 
     function changeZone(targetZone, sx, sy) {
+      if (!ZONES[targetZone]) {
+        bus.emit("state:toast", "Цільовий сектор не знайдено");
+        return;
+      }
       const state = store.get();
       state.zoneId = targetZone;
       state.player.zone = targetZone;
@@ -1669,7 +2983,7 @@
         }
       }
       for (const term of z.terminals) {
-        if (usedTerminals.has(term.id)) continue;
+        if (store.isTerminalUsed(term.id)) continue;
         const d = Math.hypot(term.x - p.x, term.y - p.y);
         if (d < bestDist) {
           bestDist = d;
@@ -1681,8 +2995,21 @@
 
     return {
       ZONES,
-      usedTerminals,
-      getCurrentZone() { return ZONES[store.get().zoneId]; },
+      getCurrentZone() { return ZONES[store.get().zoneId] || ZONES[Object.keys(ZONES)[0]]; },
+      getZoneIds() { return Object.keys(ZONES); },
+      getWorldMeta() { return worldMeta; },
+      setStartPoint(zoneId, x, y) {
+        if (!ZONES[zoneId]) return;
+        worldMeta = { startZone: zoneId, startX: x, startY: y };
+        saveWorldToStorage();
+      },
+      exportWorldData,
+      importWorldData,
+      saveWorldToStorage,
+      resetWorldData,
+      normalizeWorldData,
+      addZone,
+      deleteZone,
       worldToScreen,
       screenToWorld,
       getTile,
@@ -1807,10 +3134,12 @@
 
     function explodeCrate(crate) {
       const st = store.get();
+      store.markEntityDestroyed(crate.id);
       spawnFloatText(crate.x, crate.y, 0.8, "ВИБУХ Li-Ion!", "#f59e0b", true);
       spawnSparks(crate.x, crate.y, 0.4, "#ef4444", 24, 5.0);
       triggerShake(9, 0.22);
       bus.emit("combat:emp");
+      bus.emit("crate:destroyed", crate);
       for (const e of st.entities) {
         if (e.zone !== crate.zone || e.hp <= 0 || e.id === crate.id) continue;
         const d = Math.hypot(e.x - crate.x, e.y - crate.y);
@@ -1825,17 +3154,27 @@
     function handleEnemyKilled(e) {
       const st = store.get();
       const p = st.player;
+      store.markEntityDestroyed(e.id);
       st.stats.kills += 1;
       const bonusCred = Math.round((e.credits || 25) * (st.combo.count >= 6 ? 1.25 : 1));
+      const karmaGain = e.karma || 1;
+      const ammoGain = e.kind === "drone" ? 3 : 2;
+      const healGain = Math.random() < 0.35 ? 12 : 0;
       p.credits += bonusCred;
-      p.karma += (e.karma || 1);
+      p.karma += karmaGain;
       st.stats.creditsEarned += bonusCred;
-      p.ammo = Math.min(p.maxAmmo, p.ammo + (e.kind === "drone" ? 3 : 2));
-      if (Math.random() < 0.35) p.hp = Math.min(p.maxHp, p.hp + 12);
+      p.ammo = Math.min(p.maxAmmo, p.ammo + ammoGain);
+      if (healGain > 0) p.hp = Math.min(p.maxHp, p.hp + healGain);
 
       spawnFloatText(e.x, e.y, 1.0, `+${bonusCred} ₵`, "#10b981", false);
       bus.emit("pickup:reward");
-      bus.emit("entity:killed", e);
+      bus.emit("entity:killed", {
+        entity: e,
+        credits: bonusCred,
+        karma: karmaGain,
+        ammo: ammoGain,
+        heal: healGain
+      });
 
       if (e.kind === "boss") {
         st.flags.bossDefeated = true;
@@ -1864,6 +3203,8 @@
       if (p.hp <= 0) {
         st.mode = "GAMEOVER";
         bus.emit("game:over");
+      } else {
+        bus.emit("player:damaged", { hp: p.hp });
       }
     }
 
@@ -1925,6 +3266,7 @@
         color: "#22d3ee"
       });
       bus.emit("combat:shoot");
+      bus.emit("state:dirty");
       return true;
     }
 
@@ -1994,6 +3336,22 @@
       }
     }
 
+    function toggleThermal() {
+      const st = store.get();
+      const p = st.player;
+      if (st.mode !== "PLAYING") return false;
+      const spec = config.SKILLS.thermal;
+      if (!st.thermalActive && p.ram < spec.minRam) {
+        bus.emit("state:toast", `Недостатньо RAM для Термо-зору (мін. ${spec.minRam})`);
+        return false;
+      }
+      st.thermalActive = !st.thermalActive;
+      const level = store.getThermalLevel();
+      bus.emit("combat:thermal", { active: st.thermalActive, level });
+      bus.emit("state:toast", st.thermalActive ? `Термо-зір УВІМК (Рів. ${level})` : "Термо-зір ВИМК");
+      return true;
+    }
+
     function update(dt) {
       const st = store.get();
       const p = st.player;
@@ -2001,8 +3359,20 @@
       if (st.overclockTimer > 0) st.overclockTimer = Math.max(0, st.overclockTimer - dt);
       const playerDt = st.overclockTimer > 0 ? dt * 1.42 : dt;
 
-      // Cooldowns & regen
-      p.ram = Math.min(p.maxRam, p.ram + (config.PLAYER_BASE.ramRegen + p.ramRegenBonus) * dt);
+      // Cooldowns & RAM management (thermal vision consumes RAM when active)
+      if (st.thermalActive) {
+        const tier = store.getThermalLevel();
+        const drain = Math.max(1.8, config.SKILLS.thermal.baseDrain - (tier - 1) * config.SKILLS.thermal.drainReductionPerTier);
+        p.ram = Math.max(0, p.ram - drain * dt);
+        if (p.ram <= 0) {
+          st.thermalActive = false;
+          bus.emit("combat:thermal", { active: false, level: tier });
+          bus.emit("state:toast", "RAM вичерпано — Термо-зір вимкнено");
+        }
+      } else {
+        p.ram = Math.min(p.maxRam, p.ram + (config.PLAYER_BASE.ramRegen + p.ramRegenBonus) * dt);
+      }
+
       for (const k of Object.keys(p.skillCd)) {
         if (p.skillCd[k] > 0) p.skillCd[k] = Math.max(0, p.skillCd[k] - dt);
       }
@@ -2015,10 +3385,11 @@
         if (st.combo.timer <= 0) st.combo.count = 0;
       }
 
-      // Quick hacks via 1, 2, 3
+      // Quick hacks via 1, 2, 3 and Thermal Vision via T
       if (input.wasPressed("Digit1")) useQuickHack("inject");
       if (input.wasPressed("Digit2")) useQuickHack("overclock");
       if (input.wasPressed("Digit3")) useQuickHack("emp");
+      if (input.wasPressed("KeyT")) toggleThermal();
 
       // Screen-space movement mapped cleanly to isometric world-space
       const mv = input.getScreenMoveVector();
@@ -2184,7 +3555,7 @@
       }
     }
 
-    return { update, damageEntity, damagePlayer, useQuickHack, spawnFloatText, spawnSparks };
+    return { update, damageEntity, damagePlayer, useQuickHack, toggleThermal, spawnFloatText, spawnSparks };
   }
 
   /* ============================================================================
@@ -2354,20 +3725,67 @@
   function createHackingMatrix({ store, bus, world }) {
     const TOKENS = ["LLM", "AUTH", "ROOT", "SPOOF", "HEX", "KEY"];
     let session = null;
+    let glitchTimer = null;
+    let breakFlashTimer = null;
 
     const modal = document.getElementById("modal-hack");
+    const modalBox = modal.querySelector(".modal-box");
+    const glitchOverlay = document.getElementById("hack-glitch-overlay");
     const gridEl = document.getElementById("hack-grid");
     const seqEl = document.getElementById("hack-target-seq");
     const traceBar = document.getElementById("hack-trace-bar");
     const timerText = document.getElementById("hack-timer-text");
     const titleEl = document.getElementById("hack-title");
     const subEl = document.getElementById("hack-subtitle");
+    const comboBox = document.getElementById("hack-combo-box");
+    const comboMultEl = document.getElementById("hack-combo-mult");
+    const comboSegsEl = document.getElementById("hack-combo-segs");
+    const comboMetaEl = document.getElementById("hack-combo-meta");
 
     document.getElementById("btn-hack-abort").addEventListener("click", () => abort());
+
+    function getComboCreditBonus(maxCombo) {
+      return maxCombo >= 2 ? maxCombo * 15 : 0;
+    }
+
+    function clearGlitchEffects() {
+      clearTimeout(glitchTimer);
+      clearTimeout(breakFlashTimer);
+      glitchOverlay.classList.remove("active");
+      modalBox.classList.remove("glitch-shake");
+      comboBox.classList.remove("combo-break");
+    }
+
+    function triggerGlitch(level) {
+      const power = Math.min(3, Math.max(1, level));
+      clearTimeout(glitchTimer);
+      glitchOverlay.style.setProperty("--glitch-power", String(power));
+      modalBox.style.setProperty("--glitch-power", String(power));
+      glitchOverlay.classList.remove("active");
+      modalBox.classList.remove("glitch-shake");
+      void glitchOverlay.offsetWidth;
+      glitchOverlay.classList.add("active");
+      modalBox.classList.add("glitch-shake");
+      glitchTimer = setTimeout(() => {
+        glitchOverlay.classList.remove("active");
+        modalBox.classList.remove("glitch-shake");
+      }, 260);
+    }
+
+    function triggerBreakFlash() {
+      clearTimeout(breakFlashTimer);
+      comboBox.classList.remove("combo-break");
+      void comboBox.offsetWidth;
+      comboBox.classList.add("combo-break");
+      breakFlashTimer = setTimeout(() => {
+        comboBox.classList.remove("combo-break");
+      }, 420);
+    }
 
     function start(terminal) {
       const st = store.get();
       st.mode = "HACKING";
+      clearGlitchEffects();
       const targetSeq = Array.from({ length: 3 }, () => TOKENS[Math.floor(Math.random() * 4)]);
       const cells = Array.from({ length: 25 }, (_, i) => {
         const isIce = Math.random() < 0.16 && i > 4;
@@ -2390,6 +3808,10 @@
         cells,
         targetSeq,
         progress: 0,
+        combo: 0,
+        maxCombo: 0,
+        lastRelief: 0,
+        lastBreak: false,
         axis: "ROW", // alternates ROW -> COL -> ROW
         activeIndex: 0,
         trace: 0,
@@ -2398,7 +3820,7 @@
 
       titleEl.textContent = terminal.type === "HACK_TURRETS" ? "Перехоплення турелей Kuroda" : "Злам Zero-Trust шлюзу";
       subEl.textContent = "Виберіть підсвічені токени у правильному порядку";
-      renderDOM();
+      renderDOM(false);
       modal.classList.add("open");
     }
 
@@ -2412,17 +3834,45 @@
       const cell = session.cells[idx];
       if (!isCellEligible(cell)) return;
       cell.used = true;
+      let comboIncreased = false;
 
       if (cell.ice) {
+        const hadCombo = session.combo > 0;
+        session.combo = 0;
+        session.lastRelief = 0;
+        session.lastBreak = hadCombo;
         session.trace = Math.min(100, session.trace + 28);
         bus.emit("hack:fail");
+        if (hadCombo) {
+          bus.emit("hack:comboBreak", { reason: "ICE" });
+        }
+        triggerBreakFlash();
       } else {
         const needed = session.targetSeq[session.progress];
         if (cell.token === needed) {
           session.progress += 1;
-          bus.emit("pickup:reward");
+          session.combo += 1;
+          session.maxCombo = Math.max(session.maxCombo, session.combo);
+          session.lastBreak = false;
+          comboIncreased = true;
+          const relief = session.combo >= 3 ? 12 : (session.combo === 2 ? 6 : 0);
+          session.lastRelief = relief;
+          if (relief > 0) {
+            session.trace = Math.max(0, session.trace - relief);
+            traceBar.style.width = `${Math.round(session.trace)}%`;
+          }
+          bus.emit("hack:combo", { combo: session.combo, relief });
+          triggerGlitch(session.combo);
         } else {
+          const hadCombo = session.combo > 0;
+          session.combo = 0;
+          session.lastRelief = 0;
+          session.lastBreak = hadCombo;
           session.trace = Math.min(100, session.trace + 12);
+          if (hadCombo) {
+            bus.emit("hack:comboBreak", { reason: "MISS" });
+            triggerBreakFlash();
+          }
         }
       }
 
@@ -2442,41 +3892,53 @@
         complete(false);
         return;
       }
-      renderDOM();
+      renderDOM(comboIncreased);
     }
 
     function complete(success) {
       const st = store.get();
       const term = session.terminal;
+      const maxCombo = session.maxCombo;
+      const comboBonus = success ? getComboCreditBonus(maxCombo) : 0;
       modal.classList.remove("open");
+      modalBox.classList.remove("glitch-shake");
       session = null;
       st.mode = "PLAYING";
 
       if (success) {
         st.stats.hacks += 1;
         st.player.karma += 2;
-        world.usedTerminals.add(term.id);
-        bus.emit("hack:success");
+        store.markTerminalUsed(term.id);
+
+        if (comboBonus > 0) {
+          st.player.credits += comboBonus;
+          st.stats.creditsEarned += comboBonus;
+        }
+        const comboNote = comboBonus > 0 ? ` · Комбо ${maxCombo}x (+${comboBonus} ₵)` : "";
 
         if (term.type === "HACK_CRYPTO") {
           st.player.credits += 160;
-          bus.emit("state:toast", "Злам успішний! +160 ₵ · +2 Карма");
+          st.stats.creditsEarned += 160;
+          bus.emit("state:toast", `Злам успішний! +${160 + comboBonus} ₵ · +2 Карма${maxCombo >= 2 ? ` (комбо ${maxCombo}x)` : ""}`);
         } else if (term.type === "HACK_GATE") {
           st.flags.vaultGateOpen = true;
           st.questText = "Шлюз у Дата-Сховище відкрито! Проходьте праворуч.";
-          bus.emit("state:toast", "Шлюз у Сховище Kuroda розблоковано!");
+          bus.emit("state:toast", `Шлюз у Сховище Kuroda розблоковано!${comboNote}`);
           bus.emit("quest:update");
         } else if (term.type === "HACK_TURRETS") {
           st.flags.vaultTurretsHacked = true;
           for (const e of st.entities) {
             if (e.zone === "vault" && e.kind === "turret" && e.hp > 0) {
               e.team = "ally";
-              e.hackedTimer = 999;
+              e.hackedTimer = 9999;
+              store.markEntityAllied(e.id);
             }
           }
-          bus.emit("state:toast", "Обидві турелі залу тепер атакують Агента-09!");
+          bus.emit("state:toast", `Обидві турелі залу тепер атакують Агента-09!${comboNote}`);
         }
+        bus.emit("hack:success");
       } else {
+        clearGlitchEffects();
         bus.emit("hack:fail");
         bus.emit("state:toast", "Тривога ICE! З'єднання розірвано — спробуйте ще раз.");
       }
@@ -2484,6 +3946,7 @@
 
     function abort() {
       if (!session) return;
+      clearGlitchEffects();
       modal.classList.remove("open");
       session = null;
       store.get().mode = "PLAYING";
@@ -2500,7 +3963,43 @@
       }
     }
 
-    function renderDOM() {
+    function renderComboUI(animatePop) {
+      if (!session) return;
+      const combo = session.combo;
+      const tier = Math.min(3, combo);
+      comboBox.setAttribute("data-tier", String(tier));
+      comboMultEl.textContent = `${combo}x`;
+
+      if (animatePop && combo > 0) {
+        comboMultEl.classList.remove("pop");
+        void comboMultEl.offsetWidth;
+        comboMultEl.classList.add("pop");
+      } else {
+        comboMultEl.classList.remove("pop");
+      }
+
+      const segs = comboSegsEl.children;
+      for (let i = 0; i < segs.length; i++) {
+        segs[i].className = "combo-seg";
+        if (i < combo) {
+          segs[i].classList.add(`active-${tier}`);
+        }
+      }
+
+      if (session.lastBreak) {
+        comboMetaEl.textContent = "Серію зірвано · бонус обнулено";
+      } else if (combo === 0) {
+        comboMetaEl.textContent = "Очікування першого токена";
+      } else if (combo === 1) {
+        comboMetaEl.textContent = "Глітч x1 · наступний токен дасть -6% трейсу";
+      } else if (combo === 2) {
+        comboMetaEl.textContent = `Трейс -${session.lastRelief}% · бонус +${getComboCreditBonus(combo)} ₵`;
+      } else {
+        comboMetaEl.textContent = `ПІК! Трейс -${session.lastRelief}% · бонус +${getComboCreditBonus(combo)} ₵`;
+      }
+    }
+
+    function renderDOM(animateCombo = false) {
       if (!session) return;
       gridEl.innerHTML = "";
       session.cells.forEach((cell) => {
@@ -2521,6 +4020,8 @@
         span.textContent = tok;
         seqEl.appendChild(span);
       });
+
+      renderComboUI(animateCombo);
     }
 
     return { start, update, abort };
@@ -2605,6 +4106,7 @@
           }
           if (kw.onSelect) kw.onSelect(st, bus);
           bus.emit("pickup:reward");
+          bus.emit("dialogue:choice", kw.id);
           renderKeywords(npc);
         });
         dlgKeywords.appendChild(btn);
@@ -2654,6 +4156,7 @@
           st.shopPurchases[item.id] = rank + 1;
           item.apply(p);
           bus.emit("hack:success");
+          bus.emit("shop:purchase", item.id);
           bus.emit("state:toast", `Встановлено: ${item.name}`);
           renderShop();
         });
@@ -2725,20 +4228,23 @@
       drawIsoDiamond(cx, cy - boxH, w, h, topCol, "rgba(148,163,184,0.16)");
     }
 
-    function render(nearby) {
+    function render(nearby, editorOverlay = null) {
       const st = store.get();
       const z = world.getCurrentZone();
       const cam = st.camera;
       const p = st.player;
+      const isEditor = Boolean(editorOverlay);
 
-      // Smooth camera follow + screen shake
-      const targetCamX = (p.x - p.y) * (config.TILE_W * 0.5) - width * 0.5;
-      const targetCamY = (p.x + p.y) * (config.TILE_H * 0.5) - height * 0.52;
-      cam.x += (targetCamX - cam.x) * 0.14;
-      cam.y += (targetCamY - cam.y) * 0.14;
+      // Smooth camera follow + screen shake (disabled in Sandbox Editor so WASD/drag pans freely)
+      if (!isEditor) {
+        const targetCamX = (p.x - p.y) * (config.TILE_W * 0.5) - width * 0.5;
+        const targetCamY = (p.x + p.y) * (config.TILE_H * 0.5) - height * 0.52;
+        cam.x += (targetCamX - cam.x) * 0.14;
+        cam.y += (targetCamY - cam.y) * 0.14;
+      }
 
       let sxShake = 0, syShake = 0;
-      if (st.shakeTime > 0) {
+      if (!isEditor && st.shakeTime > 0) {
         sxShake = (Math.random() - 0.5) * st.shakeMag * 2;
         syShake = (Math.random() - 0.5) * st.shakeMag * 2;
       }
@@ -2754,17 +4260,17 @@
           if (tile === 3) continue;
           const pos = world.worldToScreen(tx + 0.5, ty + 0.5, cam);
           let fill = "#111827";
-          let stroke = "rgba(148,163,184,0.08)";
-          if (tile === 1) { fill = "#1a2335"; stroke = "rgba(148,163,184,0.14)"; }
+          let stroke = isEditor ? "rgba(148,163,184,0.22)" : "rgba(148,163,184,0.08)";
+          if (tile === 1) { fill = "#1a2335"; stroke = isEditor ? "rgba(148,163,184,0.28)" : "rgba(148,163,184,0.14)"; }
           else if (tile === 2) {
             fill = "#0e2a3d";
-            stroke = "rgba(6,182,212,0.28)";
+            stroke = "rgba(6,182,212,0.34)";
           } else if (tile === 4) {
             fill = "#2a1f14";
-            stroke = "rgba(245,158,11,0.45)";
+            stroke = "rgba(245,158,11,0.5)";
           } else if (tile === 5) {
             fill = "#0d2922";
-            stroke = "rgba(16,185,129,0.55)";
+            stroke = "rgba(16,185,129,0.58)";
           }
           drawIsoDiamond(pos.x, pos.y, config.TILE_W, config.TILE_H, fill, stroke);
         }
@@ -2784,7 +4290,7 @@
 
       // Terminals
       for (const term of z.terminals) {
-        if (world.usedTerminals.has(term.id)) continue;
+        if (!isEditor && store.isTerminalUsed(term.id)) continue;
         drawables.push({ sortY: term.x + term.y, type: "TERMINAL", data: term });
       }
 
@@ -2793,14 +4299,24 @@
         drawables.push({ sortY: npc.x + npc.y, type: "NPC", data: npc });
       }
 
-      // Entities (Enemies & Crates)
-      for (const e of st.entities) {
-        if (e.zone !== st.zoneId || e.hp <= 0) continue;
-        drawables.push({ sortY: e.x + e.y, type: e.kind === "crate" ? "CRATE" : "ENEMY", data: e });
-      }
+      if (isEditor) {
+        for (const c of z.crates) {
+          drawables.push({ sortY: c.x + c.y, type: "CRATE", data: { ...c, hitFlash: 0 } });
+        }
+        z.spawns.forEach((sp, idx) => {
+          const preview = world.makeEnemyArchetype(`ed_prev_${idx}`, z.id, sp.kind, sp.x, sp.y);
+          drawables.push({ sortY: sp.x + sp.y, type: "ENEMY", data: preview });
+        });
+      } else {
+        // Entities (Enemies & Crates)
+        for (const e of st.entities) {
+          if (e.zone !== st.zoneId || e.hp <= 0) continue;
+          drawables.push({ sortY: e.x + e.y, type: e.kind === "crate" ? "CRATE" : "ENEMY", data: e });
+        }
 
-      // Player
-      drawables.push({ sortY: p.x + p.y, type: "PLAYER", data: p });
+        // Player
+        drawables.push({ sortY: p.x + p.y, type: "PLAYER", data: p });
+      }
 
       drawables.sort((a, b) => a.sortY - b.sortY);
 
@@ -2811,10 +4327,19 @@
         } else if (item.type === "TERMINAL") {
           const t = item.data;
           const pos = world.worldToScreen(t.x, t.y, cam);
-          const col = t.type === "EXTRACT" ? "#10b981" : (t.type === "PORTAL" ? "#f59e0b" : "#06b6d4");
-          drawIsoBox(pos.x, pos.y, 26, 13, 24, "#1e293b", "#0f172a", col);
-          ctx.fillStyle = col;
-          ctx.fillRect(pos.x - 5, pos.y - 22, 10, 6);
+          if (t.hidden && !isEditor) {
+            const dist = Math.hypot(t.x - p.x, t.y - p.y);
+            if (dist < 1.8) {
+              drawIsoDiamond(pos.x, pos.y, 18, 9, "rgba(52, 211, 153, 0.12)", "rgba(52, 211, 153, 0.35)");
+            }
+          } else if (t.hidden && isEditor) {
+            drawIsoDiamond(pos.x, pos.y, 26, 13, "rgba(52, 211, 153, 0.25)", "#34d399");
+          } else {
+            const col = t.type === "EXTRACT" ? "#10b981" : (t.type === "PORTAL" ? "#f59e0b" : "#06b6d4");
+            drawIsoBox(pos.x, pos.y, 26, 13, 24, "#1e293b", "#0f172a", col);
+            ctx.fillStyle = col;
+            ctx.fillRect(pos.x - 5, pos.y - 22, 10, 6);
+          }
         } else if (item.type === "CRATE") {
           const c = item.data;
           const pos = world.worldToScreen(c.x, c.y, cam);
@@ -2829,24 +4354,26 @@
         }
       }
 
-      // Projectiles
-      for (const pr of st.projectiles) {
-        if (pr.zone !== st.zoneId) continue;
-        const pos = world.worldToScreen(pr.x, pr.y, cam);
-        ctx.fillStyle = pr.color;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y - pr.z * 26, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      if (!isEditor) {
+        // Projectiles
+        for (const pr of st.projectiles) {
+          if (pr.zone !== st.zoneId) continue;
+          const pos = world.worldToScreen(pr.x, pr.y, cam);
+          ctx.fillStyle = pr.color;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y - pr.z * 26, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-      // Particles
-      for (const pt of st.particles) {
-        const pos = world.worldToScreen(pt.x, pt.y, cam);
-        ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
-        ctx.fillStyle = pt.color;
-        ctx.fillRect(pos.x - pt.size * 0.5, pos.y - pt.z * 24 - pt.size * 0.5, pt.size, pt.size);
+        // Particles
+        for (const pt of st.particles) {
+          const pos = world.worldToScreen(pt.x, pt.y, cam);
+          ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+          ctx.fillStyle = pt.color;
+          ctx.fillRect(pos.x - pt.size * 0.5, pos.y - pt.z * 24 - pt.size * 0.5, pt.size, pt.size);
+        }
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = 1;
 
       // Floating signs (2026 cyber ads)
       ctx.font = '700 11px "IBM Plex Mono", monospace';
@@ -2862,7 +4389,7 @@
       }
 
       // Nearby interactable prompt
-      if (nearby) {
+      if (!isEditor && nearby) {
         const pos = world.worldToScreen(nearby.x, nearby.y, cam);
         ctx.font = '600 12px "IBM Plex Mono", monospace';
         const tw = ctx.measureText(nearby.label).width + 18;
@@ -2874,36 +4401,247 @@
         ctx.fillText(nearby.label, pos.x, pos.y - 52);
       }
 
-      // Floating combat damage text
-      for (const ft of st.floatTexts) {
-        const pos = world.worldToScreen(ft.x, ft.y, cam);
-        ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
-        ctx.font = ft.big ? '700 15px "Chakra Petch", sans-serif' : '600 12px "IBM Plex Mono", monospace';
-        ctx.fillStyle = ft.color;
-        ctx.fillText(ft.text, pos.x, pos.y - ft.z * 28 - 22);
+      // Thermal Vision overlay (through-wall enemies + level-gated interactive objects & stashes)
+      if (!isEditor && st.thermalActive) {
+        drawThermalOverlay(st, z, p, cam);
       }
-      ctx.globalAlpha = 1;
 
-      // Rain FX
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.16)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (const r of st.rainDrops) {
-        const rx = r.x * width;
-        const ry = r.y * height;
-        ctx.moveTo(rx, ry);
-        ctx.lineTo(rx - 4, ry + r.len);
+      // Sandbox World Editor overlay (tile cursor, spawn tags, portal links, start point)
+      if (isEditor) {
+        drawEditorOverlay(z, cam, editorOverlay);
       }
-      ctx.stroke();
 
-      // Overclock tint vignette
-      if (st.overclockTimer > 0) {
-        ctx.strokeStyle = "rgba(245, 158, 11, 0.55)";
-        ctx.lineWidth = 6;
-        ctx.strokeRect(3, 3, width - 6, height - 6);
+      if (!isEditor) {
+        // Floating combat damage text
+        for (const ft of st.floatTexts) {
+          const pos = world.worldToScreen(ft.x, ft.y, cam);
+          ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+          ctx.font = ft.big ? '700 15px "Chakra Petch", sans-serif' : '600 12px "IBM Plex Mono", monospace';
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, pos.x, pos.y - ft.z * 28 - 22);
+        }
+        ctx.globalAlpha = 1;
+
+        // Overclock tint vignette
+        if (st.overclockTimer > 0) {
+          ctx.strokeStyle = "rgba(245, 158, 11, 0.55)";
+          ctx.lineWidth = 6;
+          ctx.strokeRect(3, 3, width - 6, height - 6);
+        }
       }
 
       ctx.restore();
+    }
+
+    function drawEditorOverlay(z, cam, editorOverlay) {
+      const meta = world.getWorldMeta();
+      ctx.save();
+      ctx.font = '600 10px "IBM Plex Mono", monospace';
+      ctx.textAlign = "center";
+
+      // Start spawn marker if inside this zone
+      if (meta.startZone === z.id) {
+        const sp = world.worldToScreen(meta.startX, meta.startY, cam);
+        drawIsoDiamond(sp.x, sp.y, 34, 17, "rgba(34, 197, 94, 0.25)", "#22c55e");
+        ctx.fillStyle = "#86efac";
+        ctx.fillText("START", sp.x, sp.y - 16);
+      }
+
+      // Terminal / portal / stash badges
+      for (const term of z.terminals) {
+        const tp = world.worldToScreen(term.x, term.y, cam);
+        const isSel = editorOverlay.selectedPortalId && editorOverlay.selectedPortalId === term.id;
+        if (isSel) {
+          drawIsoDiamond(tp.x, tp.y, 44, 22, "rgba(245, 158, 11, 0.2)", "#f59e0b");
+        }
+        const tag = term.type === "PORTAL"
+          ? `PORTAL → ${term.targetZone || "?"}`
+          : (term.type === "STASH" ? "STASH (ІЧ)" : term.type);
+        const tw = ctx.measureText(tag).width + 10;
+        ctx.fillStyle = "rgba(8, 13, 24, 0.88)";
+        ctx.fillRect(tp.x - tw * 0.5, tp.y - 46, tw, 15);
+        ctx.strokeStyle = isSel ? "#fbbf24" : (term.type === "STASH" ? "#34d399" : "#22d3ee");
+        ctx.lineWidth = isSel ? 1.8 : 1;
+        ctx.strokeRect(tp.x - tw * 0.5, tp.y - 46, tw, 15);
+        ctx.fillStyle = term.type === "STASH" ? "#6ee7b7" : (term.type === "PORTAL" ? "#fde68a" : "#a5f3fc");
+        ctx.fillText(tag, tp.x, tp.y - 35);
+      }
+
+      // Enemy spawn labels
+      for (const sp of z.spawns) {
+        const ep = world.worldToScreen(sp.x, sp.y, cam);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(ep.x - 24, ep.y - 68, 48, 13);
+        ctx.fillStyle = sp.kind === "boss" ? "#fca5a5" : "#fb7185";
+        ctx.fillText(String(sp.kind || "punk").toUpperCase(), ep.x, ep.y - 58);
+      }
+
+      // Hover tile highlight
+      const ht = editorOverlay.hoverTile;
+      if (ht && ht.tx >= 0 && ht.ty >= 0 && ht.tx < z.width && ht.ty < z.height) {
+        const hp = world.worldToScreen(ht.tx + 0.5, ht.ty + 0.5, cam);
+        drawIsoDiamond(hp.x, hp.y, config.TILE_W, config.TILE_H, "rgba(34, 211, 238, 0.22)", "#22d3ee");
+        ctx.fillStyle = "#e0f2fe";
+        ctx.fillText(`${ht.tx},${ht.ty}`, hp.x, hp.y + 3);
+      }
+
+      ctx.restore();
+    }
+
+    function drawThermalOverlay(st, z, p, cam) {
+      const level = store.getThermalLevel();
+      const nowSec = performance.now() * 0.001;
+      const pulse = 0.65 + 0.35 * Math.sin(nowSec * 5.2);
+
+      // Cold infrared backdrop wash + subtle sweep scanline (rendered in viewport space)
+      ctx.save();
+      ctx.setTransform(Math.min(window.devicePixelRatio || 1, 2), 0, 0, Math.min(window.devicePixelRatio || 1, 2), 0, 0);
+      ctx.fillStyle = "rgba(6, 14, 34, 0.42)";
+      ctx.fillRect(0, 0, width, height);
+
+      const sweepY = ((nowSec * 150) % (height + 60)) - 30;
+      const scanGrad = ctx.createLinearGradient(0, sweepY - 24, 0, sweepY + 24);
+      scanGrad.addColorStop(0, "rgba(6, 182, 212, 0)");
+      scanGrad.addColorStop(0.5, "rgba(6, 182, 212, 0.14)");
+      scanGrad.addColorStop(1, "rgba(6, 182, 212, 0)");
+      ctx.fillStyle = scanGrad;
+      ctx.fillRect(0, sweepY - 24, width, 48);
+
+      // Subtle IR reticle border
+      ctx.strokeStyle = "rgba(6, 182, 212, 0.42)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(6, 6, width - 12, height - 12);
+      ctx.restore();
+
+      // Level 2+: Reveal crates, terminals, portals, and hidden interactive stashes through walls
+      if (level >= 2) {
+        for (const e of st.entities) {
+          if (e.zone !== st.zoneId || e.hp <= 0 || e.kind !== "crate") continue;
+          const pos = world.worldToScreen(e.x, e.y, cam);
+          ctx.save();
+          ctx.setLineDash([4, 3]);
+          drawIsoDiamond(pos.x, pos.y - 10, 34, 17, "rgba(251, 191, 36, 0.14)", "rgba(251, 191, 36, 0.85)");
+          ctx.setLineDash([]);
+          ctx.font = '600 10px "IBM Plex Mono", monospace';
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#fde68a";
+          ctx.fillText("ЛУТ", pos.x, pos.y - 24);
+          ctx.restore();
+        }
+
+        for (const t of z.terminals) {
+          if (store.isTerminalUsed(t.id)) continue;
+          const pos = world.worldToScreen(t.x, t.y, cam);
+          const isStash = t.type === "STASH";
+          const col = isStash ? "#34d399" : (t.type === "PORTAL" ? "#f59e0b" : "#22d3ee");
+          const rgbaGlow = isStash ? `rgba(52, 211, 153, ${0.22 + pulse * 0.2})` : "rgba(34, 211, 238, 0.18)";
+
+          ctx.save();
+          drawIsoDiamond(pos.x, pos.y - 2, isStash ? 34 : 28, isStash ? 17 : 14, rgbaGlow, col);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = isStash ? 2 : 1.5;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y - 14, isStash ? 15 + pulse * 4 : 13, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.font = '700 10px "IBM Plex Mono", monospace';
+          ctx.textAlign = "center";
+          ctx.fillStyle = isStash ? "#6ee7b7" : "#a5f3fc";
+          const tag = isStash ? "СХОВАНКА [E]" : (t.type === "PORTAL" ? "ШЛЮЗ" : (t.type === "VENDING" ? "АПТЕЧКА" : "ТЕРМІНАЛ"));
+          ctx.fillText(tag, pos.x, pos.y - 34);
+          ctx.restore();
+
+          // Off-screen / edge beacon for hidden stashes
+          if (isStash && (pos.x < 24 || pos.x > width - 24 || pos.y < 24 || pos.y > height - 24)) {
+            const cx = Math.max(36, Math.min(width - 36, pos.x));
+            const cy = Math.max(70, Math.min(height - 76, pos.y));
+            ctx.save();
+            ctx.fillStyle = "rgba(6, 78, 59, 0.9)";
+            ctx.strokeStyle = "#34d399";
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(cx - 34, cy - 10, 68, 20);
+            ctx.strokeRect(cx - 34, cy - 10, 68, 20);
+            ctx.font = '700 10px "IBM Plex Mono", monospace';
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#6ee7b7";
+            ctx.fillText("ТАЙНИК →", cx, cy + 3);
+            ctx.restore();
+          }
+        }
+      }
+
+      // Level 1+: Through-wall thermal silhouettes for all live enemies in zone
+      for (const e of st.entities) {
+        if (e.zone !== st.zoneId || e.hp <= 0 || e.kind === "crate") continue;
+        const pos = world.worldToScreen(e.x, e.y, cam);
+        const zPx = (e.z || 0) * 28;
+        const isMech = e.kind === "drone" || e.kind === "turret";
+        const isAlly = e.team === "ally";
+        const baseW = e.kind === "boss" ? 28 : 18;
+        const baseH = e.kind === "boss" ? 44 : 30;
+        const topY = pos.y - baseH - zPx;
+
+        // Heat aura
+        const grad = ctx.createRadialGradient(pos.x, topY + baseH * 0.5, 2, pos.x, topY + baseH * 0.5, e.kind === "boss" ? 36 : 24);
+        if (isAlly) {
+          grad.addColorStop(0, "rgba(34, 211, 238, 0.55)");
+          grad.addColorStop(1, "rgba(34, 211, 238, 0)");
+        } else if (isMech) {
+          grad.addColorStop(0, "rgba(244, 63, 94, 0.55)");
+          grad.addColorStop(1, "rgba(244, 63, 94, 0)");
+        } else {
+          grad.addColorStop(0, "rgba(249, 115, 22, 0.62)");
+          grad.addColorStop(1, "rgba(249, 115, 22, 0)");
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(pos.x, topY + baseH * 0.5, e.kind === "boss" ? 36 : 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Crisp thermal silhouette + corner brackets visible through walls
+        const rimCol = isAlly ? "#22d3ee" : (isMech ? "#fb7185" : "#fde047");
+        const bodyCol = isAlly ? "rgba(6, 182, 212, 0.34)" : (isMech ? "rgba(244, 63, 94, 0.36)" : "rgba(249, 115, 22, 0.4)");
+        ctx.fillStyle = bodyCol;
+        ctx.fillRect(pos.x - baseW * 0.5, topY, baseW, baseH);
+        ctx.strokeStyle = rimCol;
+        ctx.lineWidth = e.kind === "boss" ? 2 : 1.4;
+        ctx.strokeRect(pos.x - baseW * 0.5, topY, baseW, baseH);
+
+        // Level 3: Enemy sight/aim vector & telegraph lock
+        if (level >= 3 && !isAlly) {
+          const aimX = pos.x + ((e.facingX || 0) - (e.facingY || 0)) * 22;
+          const aimY = (topY + baseH * 0.45) + ((e.facingX || 0) + (e.facingY || 0)) * 11;
+          ctx.save();
+          ctx.strokeStyle = e.aiState === "TELEGRAPH" ? "#ef4444" : "rgba(253, 224, 71, 0.72)";
+          ctx.lineWidth = e.aiState === "TELEGRAPH" ? 2.2 : 1.3;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(pos.x, topY + baseH * 0.45);
+          ctx.lineTo(aimX, aimY);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Thermal HP strip + tag
+        const hpRatio = Math.max(0, Math.min(1, e.hp / e.maxHp));
+        ctx.fillStyle = "rgba(8, 12, 24, 0.85)";
+        ctx.fillRect(pos.x - 14, topY - 8, 28, 4);
+        ctx.fillStyle = rimCol;
+        ctx.fillRect(pos.x - 14, topY - 8, 28 * hpRatio, 4);
+
+        ctx.font = '600 9px "IBM Plex Mono", monospace';
+        ctx.textAlign = "center";
+        ctx.fillStyle = rimCol;
+        ctx.fillText(e.kind === "boss" ? "АГЕНТ-09" : (isMech ? "МЕХ" : "БІО"), pos.x, topY - 12);
+      }
+
+      // Thermal player halo
+      const pPos = world.worldToScreen(p.x, p.y, cam);
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(pPos.x, pPos.y, 19, 10, 0, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     function drawCharacter(npc, cam) {
@@ -3038,12 +4776,1145 @@
   }
 
   /* ============================================================================
+   * MODULE 11B: RAIN_SHADER (WebGL GLSL Overlay + 2D Fallback)
+   * Dependencies: STATE_STORE
+   * Exports: createRainShader({ canvas, store })
+   * Seam note: Isolated post-layer precipitation shader overlay
+   * ========================================================================== */
+  function createRainShader({ canvas, store }) {
+    const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false });
+    let fallbackCtx = null;
+    let program = null;
+    let uniforms = null;
+    let width = 1280;
+    let height = 720;
+    let clearedWhenZero = false;
+
+    const VERT_SRC = `
+      attribute vec2 a_pos;
+      void main() {
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+      }
+    `;
+
+    const FRAG_SRC = `
+      precision mediump float;
+      uniform vec2 u_resolution;
+      uniform float u_time;
+      uniform float u_intensity;
+      uniform float u_overclock;
+
+      float hash12(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+      }
+
+      float rainLayer(vec2 uv, float cols, float speed, float slant, float density, float lenScale) {
+        vec2 st = uv;
+        st.x += st.y * slant;
+        st.x *= cols;
+        float id = floor(st.x);
+        float seed = hash12(vec2(id, cols));
+        float active = step(1.0 - density, seed);
+        float xLocal = fract(st.x) - 0.5;
+        float yFlow = st.y * lenScale + u_time * speed + seed * 19.0;
+        float cellId = floor(yFlow);
+        float yLocal = fract(yFlow);
+        float dropHash = hash12(vec2(id, cellId));
+        float dropMask = step(0.36, dropHash);
+        float widthMask = smoothstep(0.13, 0.015, abs(xLocal));
+        float tailMask = smoothstep(0.0, 0.14, yLocal) * smoothstep(0.95, 0.2, yLocal);
+        return active * dropMask * widthMask * tailMask;
+      }
+
+      float rippleLayer(vec2 uv, float scale, float speed, float density) {
+        vec2 p = uv * vec2(scale, scale * 1.75);
+        vec2 cell = floor(p);
+        vec2 f = fract(p) - 0.5;
+        float h = hash12(cell + vec2(13.7, 7.3));
+        if (h > density) return 0.0;
+        float phase = fract(u_time * speed + h * 8.3);
+        float dist = length(f);
+        float radius = phase * 0.44;
+        float ring = smoothstep(0.045, 0.0, abs(dist - radius));
+        float fade = (1.0 - phase) * smoothstep(0.0, 0.16, phase);
+        float groundMask = smoothstep(0.88, 0.22, uv.y);
+        return ring * fade * groundMask;
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        float densNear = clamp(u_intensity * 0.85, 0.0, 0.92);
+        float densMid  = clamp(u_intensity * 0.95, 0.0, 0.96);
+        float densFar  = clamp(u_intensity * 1.00, 0.0, 0.98);
+
+        float r1 = rainLayer(uv, 58.0, 4.4, 0.15, densNear, 4.2);
+        float r2 = rainLayer(uv + vec2(0.37, 0.19), 96.0, 3.1, 0.14, densMid, 6.2);
+        float r3 = rainLayer(uv + vec2(0.71, 0.53), 148.0, 2.2, 0.12, densFar, 8.6);
+
+        float rip = rippleLayer(uv, 11.0, 1.35, u_intensity * 0.36) * 0.65
+                  + rippleLayer(uv + vec2(0.42, 0.11), 17.0, 1.75, u_intensity * 0.28) * 0.45;
+
+        float rainSignal = r1 * 0.36 + r2 * 0.23 + r3 * 0.14;
+        float rippleSignal = rip * 0.28;
+        float alpha = clamp((rainSignal + rippleSignal) * (0.35 + 0.65 * u_intensity), 0.0, 0.56);
+
+        float neonWave = 0.5 + 0.5 * sin(uv.x * 8.0 + uv.y * 2.5 + u_time * 0.35);
+        vec3 cyanGlint = vec3(0.07, 0.74, 0.90);
+        vec3 amberGlint = vec3(0.96, 0.62, 0.09);
+        vec3 baseRain = vec3(0.64, 0.78, 0.90);
+        vec3 neonTint = mix(cyanGlint, amberGlint, clamp(neonWave * 0.6 + u_overclock * 0.6, 0.0, 1.0));
+        vec3 col = mix(baseRain, neonTint, 0.38 + u_overclock * 0.36);
+
+        gl_FragColor = vec4(col * alpha, alpha);
+      }
+    `;
+
+    function compileShader(type, src) {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        gl.deleteShader(sh);
+        return null;
+      }
+      return sh;
+    }
+
+    if (gl) {
+      const vs = compileShader(gl.VERTEX_SHADER, VERT_SRC);
+      const fs = compileShader(gl.FRAGMENT_SHADER, FRAG_SRC);
+      if (vs && fs) {
+        program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
+          const buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+            gl.STATIC_DRAW
+          );
+          const loc = gl.getAttribLocation(program, "a_pos");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          uniforms = {
+            res: gl.getUniformLocation(program, "u_resolution"),
+            time: gl.getUniformLocation(program, "u_time"),
+            intensity: gl.getUniformLocation(program, "u_intensity"),
+            overclock: gl.getUniformLocation(program, "u_overclock")
+          };
+        } else {
+          program = null;
+        }
+      }
+    }
+
+    if (!program) {
+      fallbackCtx = canvas.getContext("2d");
+    }
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth || window.innerWidth;
+      height = canvas.clientHeight || window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      if (gl && program) {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      } else if (fallbackCtx) {
+        fallbackCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    }
+
+    function render(shaderTime, intensity, overclockFactor) {
+      if (gl && program) {
+        gl.clearColor(0, 0, 0, 0);
+        if (intensity <= 0.005) {
+          if (!clearedWhenZero) {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            clearedWhenZero = true;
+          }
+          return;
+        }
+        clearedWhenZero = false;
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
+        gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+        gl.uniform1f(uniforms.time, shaderTime);
+        gl.uniform1f(uniforms.intensity, intensity);
+        gl.uniform1f(uniforms.overclock, overclockFactor);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        return;
+      }
+
+      if (fallbackCtx) {
+        fallbackCtx.clearRect(0, 0, width, height);
+        if (intensity <= 0.005) return;
+        const st = store.get();
+        const activeCount = Math.floor(st.rainDrops.length * intensity);
+        fallbackCtx.strokeStyle = `rgba(125, 211, 252, ${(0.12 + intensity * 0.2).toFixed(2)})`;
+        fallbackCtx.lineWidth = 1;
+        fallbackCtx.beginPath();
+        for (let i = 0; i < activeCount; i++) {
+          const r = st.rainDrops[i];
+          const rx = r.x * width;
+          const ry = r.y * height;
+          fallbackCtx.moveTo(rx, ry);
+          fallbackCtx.lineTo(rx - 4, ry + r.len);
+        }
+        fallbackCtx.stroke();
+      }
+    }
+
+    return { resize, render, isWebGL: () => Boolean(gl && program) };
+  }
+
+  /* ============================================================================
+   * MODULE 11C: WORLD_EDITOR (Sandbox Mode & JSON World Serialization)
+   * Dependencies: CONFIG, STATE_STORE, WORLD_MAP, EVENT_BUS, INPUT_MANAGER
+   * Exports: createWorldEditor({ config, store, world, bus, input, canvas, onPlaytest, onExitMenu })
+   * Seam note: Standalone Sandbox editor with Playtest handoff & versioned JSON I/O
+   * ========================================================================== */
+  function createWorldEditor({ config, store, world, bus, input, canvas, onPlaytest, onExitMenu }) {
+    const editorEl = document.getElementById("editor-ui");
+    const zoneSelect = document.getElementById("ed-zone-select");
+    const zoneTitleInput = document.getElementById("ed-zone-title");
+    const zoneDimsEl = document.getElementById("ed-zone-dims");
+    const statusEl = document.getElementById("ed-status");
+    const tilesGrid = document.getElementById("ed-tiles-grid");
+    const entitiesGrid = document.getElementById("ed-entities-grid");
+    const objectsGrid = document.getElementById("ed-objects-grid");
+
+    const portalFields = document.getElementById("ed-portal-fields");
+    const portalTarget = document.getElementById("ed-portal-target");
+    const portalSx = document.getElementById("ed-portal-sx");
+    const portalSy = document.getElementById("ed-portal-sy");
+    const portalFlag = document.getElementById("ed-portal-flag");
+    const btnApplyPortal = document.getElementById("btn-ed-apply-portal");
+
+    const newZoneForm = document.getElementById("ed-new-zone-form");
+    const nzId = document.getElementById("ed-nz-id");
+    const nzTitle = document.getElementById("ed-nz-title");
+    const nzW = document.getElementById("ed-nz-w");
+    const nzH = document.getElementById("ed-nz-h");
+
+    const jsonModal = document.getElementById("modal-editor-json");
+    const jsonTitle = document.getElementById("ed-json-title");
+    const jsonFileRow = document.getElementById("ed-json-file-row");
+    const jsonFile = document.getElementById("ed-json-file");
+    const jsonText = document.getElementById("ed-json-text");
+    const jsonError = document.getElementById("ed-json-error");
+    const btnJsonPrimary = document.getElementById("btn-ed-json-primary");
+    const btnJsonCopy = document.getElementById("btn-ed-json-copy");
+
+    const TOOLS = {
+      tiles: [
+        { id: "tile:0", label: "Асфальт", color: "#111827" },
+        { id: "tile:1", label: "Плитка", color: "#1a2335" },
+        { id: "tile:2", label: "Неон-смуга", color: "#06b6d4" },
+        { id: "tile:3", label: "Стіна / Блок", color: "#475569" },
+        { id: "tile:4", label: "Шлюз", color: "#f59e0b" },
+        { id: "tile:5", label: "Екстракція", color: "#10b981" }
+      ],
+      entities: [
+        { id: "spawn:punk", label: "Гіг-рейдер", color: "#f87171" },
+        { id: "spawn:shield", label: "Щитовик", color: "#38bdf8" },
+        { id: "spawn:drone", label: "FPV Дрон", color: "#fb7185" },
+        { id: "spawn:enforcer", label: "Екзо-боєць", color: "#94a3b8" },
+        { id: "spawn:turret", label: "Турель 6G", color: "#ef4444" },
+        { id: "spawn:boss", label: "Бос Агент-09", color: "#dc2626" },
+        { id: "crate", label: "Li-Ion Ящик", color: "#f59e0b" },
+        { id: "erase_entity", label: "Стерти ворога", color: "#64748b" }
+      ],
+      objects: [
+        { id: "obj:PORTAL", label: "Портал", color: "#f59e0b" },
+        { id: "obj:STASH", label: "Тайник (ІЧ)", color: "#34d399" },
+        { id: "obj:HACK_CRYPTO", label: "Крипто-вузол", color: "#06b6d4" },
+        { id: "obj:HACK_GATE", label: "Вузол шлюзу", color: "#22d3ee" },
+        { id: "obj:HACK_TURRETS", label: "Турель-хак", color: "#38bdf8" },
+        { id: "obj:VENDING", label: "Рамен-автомат", color: "#fbbf24" },
+        { id: "obj:EXTRACT", label: "Екстракція", color: "#10b981" },
+        { id: "obj:SIGN", label: "Неон-вивіска", color: "#f472b6" },
+        { id: "start_point", label: "Старт гравця", color: "#22c55e" },
+        { id: "erase_obj", label: "Стерти об'єкт", color: "#64748b" }
+      ]
+    };
+
+    let activeTool = "tile:0";
+    let hoverTile = null;
+    let selectedPortalId = null;
+    let painting = false;
+    let panning = false;
+    let lastPanX = 0;
+    let lastPanY = 0;
+    let jsonMode = "export";
+    let uidSeq = Date.now() % 100000;
+
+    function nextUid(prefix) {
+      uidSeq += 1;
+      return `${prefix}_${uidSeq}`;
+    }
+
+    function isActive() {
+      return store.get().mode === "EDITOR";
+    }
+
+    function isModalOpen() {
+      return jsonModal.classList.contains("open");
+    }
+
+    function setActiveTool(toolId) {
+      activeTool = toolId;
+      document.querySelectorAll(".ed-tool-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tool === activeTool);
+      });
+    }
+
+    function renderPaletteGrid(container, list) {
+      container.innerHTML = "";
+      for (const item of list) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ed-tool-btn";
+        btn.dataset.tool = item.id;
+        btn.innerHTML = `<span class="ed-swatch" style="background:${item.color}"></span><span>${item.label}</span>`;
+        btn.addEventListener("click", () => setActiveTool(item.id));
+        container.appendChild(btn);
+      }
+    }
+
+    renderPaletteGrid(tilesGrid, TOOLS.tiles);
+    renderPaletteGrid(entitiesGrid, TOOLS.entities);
+    renderPaletteGrid(objectsGrid, TOOLS.objects);
+    setActiveTool(activeTool);
+
+    function centerCameraOnZone(z) {
+      if (!z) return;
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || window.innerWidth;
+      const h = rect.height || window.innerHeight;
+      const cx = z.width * 0.5;
+      const cy = z.height * 0.5;
+      const cam = store.get().camera;
+      cam.x = (cx - cy) * (config.TILE_W * 0.5) - w * 0.5;
+      cam.y = (cx + cy) * (config.TILE_H * 0.5) - h * 0.5;
+    }
+
+    function syncPortalInspector() {
+      const z = world.getCurrentZone();
+      const term = z?.terminals?.find((t) => t.id === selectedPortalId && t.type === "PORTAL");
+      if (!term) {
+        portalFields.style.display = "none";
+        return;
+      }
+      portalFields.style.display = "flex";
+      portalTarget.innerHTML = "";
+      for (const zid of world.getZoneIds()) {
+        const opt = document.createElement("option");
+        opt.value = zid;
+        opt.textContent = `${zid} · ${world.ZONES[zid].title}`;
+        portalTarget.appendChild(opt);
+      }
+      portalTarget.value = world.ZONES[term.targetZone] ? term.targetZone : world.getZoneIds()[0];
+      portalSx.value = String(term.spawnX ?? 2.5);
+      portalSy.value = String(term.spawnY ?? 5.0);
+      portalFlag.value = term.requiresFlag || "";
+    }
+
+    function syncZoneControls() {
+      const st = store.get();
+      const ids = world.getZoneIds();
+      if (!world.ZONES[st.zoneId] && ids.length > 0) {
+        st.zoneId = ids[0];
+      }
+      zoneSelect.innerHTML = "";
+      for (const zid of ids) {
+        const opt = document.createElement("option");
+        opt.value = zid;
+        opt.textContent = `${zid} · ${world.ZONES[zid].title}`;
+        zoneSelect.appendChild(opt);
+      }
+      zoneSelect.value = st.zoneId;
+      const z = world.getCurrentZone();
+      if (z) {
+        zoneTitleInput.value = z.title;
+        zoneDimsEl.textContent = `Розмір: ${z.width} × ${z.height} · Ворогів: ${z.spawns.length} · Об'єктів: ${z.terminals.length}`;
+      }
+      syncPortalInspector();
+      updateStatusLine();
+    }
+
+    function updateStatusLine(msg = null) {
+      if (msg) {
+        statusEl.textContent = msg;
+        return;
+      }
+      const posText = hoverTile ? `${hoverTile.tx}, ${hoverTile.ty}` : "—, —";
+      statusEl.textContent = `Схема v1 · ${posText}`;
+    }
+
+    function selectZone(zoneId) {
+      if (!world.ZONES[zoneId]) return;
+      store.get().zoneId = zoneId;
+      selectedPortalId = null;
+      syncZoneControls();
+      centerCameraOnZone(world.getCurrentZone());
+    }
+
+    function screenToTile(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const sx = clientX - rect.left;
+      const sy = clientY - rect.top;
+      const wpos = world.screenToWorld(sx, sy, store.get().camera);
+      return {
+        tx: Math.floor(wpos.x),
+        ty: Math.floor(wpos.y),
+        wx: wpos.x,
+        wy: wpos.y
+      };
+    }
+
+    function paintTileAt(tx, ty) {
+      const z = world.getCurrentZone();
+      if (!z || tx < 0 || ty < 0 || tx >= z.width || ty >= z.height) return;
+      const tileVal = Number(activeTool.split(":")[1]);
+      if (z.grid[ty][tx] !== tileVal) {
+        z.grid[ty][tx] = tileVal;
+      }
+    }
+
+    function removeNearest(arr, wx, wy, maxDist = 0.85) {
+      let bestIdx = -1;
+      let bestD = maxDist;
+      arr.forEach((item, idx) => {
+        const d = Math.hypot(item.x - wx, item.y - wy);
+        if (d < bestD) {
+          bestD = d;
+          bestIdx = idx;
+        }
+      });
+      if (bestIdx >= 0) {
+        const [removed] = arr.splice(bestIdx, 1);
+        return removed;
+      }
+      return null;
+    }
+
+    function applyClickTool(tx, ty) {
+      const z = world.getCurrentZone();
+      if (!z || tx < 0 || ty < 0 || tx >= z.width || ty >= z.height) return;
+      const cx = tx + 0.5;
+      const cy = ty + 0.5;
+
+      if (activeTool.startsWith("spawn:")) {
+        const kind = activeTool.split(":")[1];
+        z.spawns.push({ kind, x: cx, y: cy });
+        world.saveWorldToStorage();
+        syncZoneControls();
+        return;
+      }
+
+      if (activeTool === "crate") {
+        z.crates.push({ id: nextUid("crate"), x: cx, y: cy });
+        world.saveWorldToStorage();
+        syncZoneControls();
+        return;
+      }
+
+      if (activeTool === "erase_entity") {
+        const remSpawn = removeNearest(z.spawns, cx, cy, 0.9);
+        if (!remSpawn) removeNearest(z.crates, cx, cy, 0.9);
+        world.saveWorldToStorage();
+        syncZoneControls();
+        return;
+      }
+
+      if (activeTool === "start_point") {
+        world.setStartPoint(z.id, cx, cy);
+        updateStatusLine(`Старт: ${z.id} (${cx}, ${cy})`);
+        return;
+      }
+
+      if (activeTool === "erase_obj") {
+        const remTerm = removeNearest(z.terminals, cx, cy, 0.9);
+        if (remTerm) {
+          if (remTerm.id === selectedPortalId) selectedPortalId = null;
+        } else {
+          removeNearest(z.signs, cx, cy, 0.95);
+        }
+        world.saveWorldToStorage();
+        syncZoneControls();
+        return;
+      }
+
+      if (activeTool.startsWith("obj:")) {
+        const type = activeTool.split(":")[1];
+        if (type === "SIGN") {
+          z.signs.push({ x: cx, y: cy, text: "NEON // 2026", color: "#22d3ee" });
+          world.saveWorldToStorage();
+          syncZoneControls();
+          return;
+        }
+        if (type === "PORTAL") {
+          const existing = z.terminals.find((t) => t.type === "PORTAL" && Math.hypot(t.x - cx, t.y - cy) < 0.85);
+          if (existing) {
+            selectedPortalId = existing.id;
+            syncPortalInspector();
+            return;
+          }
+          const ids = world.getZoneIds();
+          const defaultTarget = ids.find((id) => id !== z.id) || z.id;
+          const newPortal = {
+            id: nextUid("portal"),
+            x: cx,
+            y: cy,
+            type: "PORTAL",
+            targetZone: defaultTarget,
+            spawnX: 2.5,
+            spawnY: 5.0,
+            label: `У ${world.ZONES[defaultTarget]?.title || defaultTarget} [E]`
+          };
+          z.terminals.push(newPortal);
+          selectedPortalId = newPortal.id;
+          world.saveWorldToStorage();
+          syncZoneControls();
+          return;
+        }
+        if (type === "STASH") {
+          z.terminals.push({
+            id: nextUid("stash"),
+            x: cx,
+            y: cy,
+            type: "STASH",
+            hidden: true,
+            label: "Прихований тайник [E]",
+            rewardCredits: 90,
+            rewardAmmo: 5,
+            rewardKarma: 1
+          });
+        } else {
+          const labels = {
+            HACK_CRYPTO: "Зламати крипто-вузол [E]",
+            HACK_GATE: "Зламати термінал шлюзу [E]",
+            HACK_TURRETS: "Перехопити турелі [E]",
+            VENDING: "Автомат «Синт-Рамен» 30 ₵ [E]",
+            EXTRACT: "Завантажити ядро «Хімера» [E]"
+          };
+          z.terminals.push({
+            id: nextUid(type.toLowerCase()),
+            x: cx,
+            y: cy,
+            type,
+            label: labels[type] || `${type} [E]`
+          });
+        }
+        world.saveWorldToStorage();
+        syncZoneControls();
+      }
+    }
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!isActive()) return;
+      if (panning) {
+        const dx = e.clientX - lastPanX;
+        const dy = e.clientY - lastPanY;
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        store.get().camera.x -= dx;
+        store.get().camera.y -= dy;
+        return;
+      }
+      const t = screenToTile(e.clientX, e.clientY);
+      hoverTile = { tx: t.tx, ty: t.ty };
+      updateStatusLine();
+      if (painting && activeTool.startsWith("tile:")) {
+        paintTileAt(t.tx, t.ty);
+      }
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+      if (!isActive() || isModalOpen()) return;
+      if (e.button === 2 || e.button === 1) {
+        panning = true;
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        return;
+      }
+      if (e.button === 0) {
+        const t = screenToTile(e.clientX, e.clientY);
+        hoverTile = { tx: t.tx, ty: t.ty };
+        if (activeTool.startsWith("tile:")) {
+          painting = true;
+          paintTileAt(t.tx, t.ty);
+        } else {
+          applyClickTool(t.tx, t.ty);
+        }
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (!isActive()) return;
+      if (painting) {
+        painting = false;
+        world.saveWorldToStorage();
+      }
+      panning = false;
+    });
+
+    zoneSelect.addEventListener("change", () => selectZone(zoneSelect.value));
+
+    zoneTitleInput.addEventListener("input", () => {
+      const z = world.getCurrentZone();
+      if (!z) return;
+      z.title = zoneTitleInput.value;
+      const opt = zoneSelect.querySelector(`option[value="${z.id}"]`);
+      if (opt) opt.textContent = `${z.id} · ${z.title}`;
+      world.saveWorldToStorage();
+    });
+
+    btnApplyPortal.addEventListener("click", () => {
+      const z = world.getCurrentZone();
+      const term = z?.terminals?.find((t) => t.id === selectedPortalId && t.type === "PORTAL");
+      if (!term) return;
+      term.targetZone = portalTarget.value;
+      term.spawnX = Math.max(1.2, Number(portalSx.value) || 2.5);
+      term.spawnY = Math.max(1.2, Number(portalSy.value) || 5.0);
+      if (portalFlag.value) term.requiresFlag = portalFlag.value;
+      else delete term.requiresFlag;
+      term.label = `У ${world.ZONES[term.targetZone]?.title || term.targetZone} [E]`;
+      world.saveWorldToStorage();
+      updateStatusLine("Портал оновлено");
+    });
+
+    document.getElementById("btn-ed-new-zone").addEventListener("click", () => {
+      newZoneForm.style.display = newZoneForm.style.display === "flex" ? "none" : "flex";
+    });
+
+    document.getElementById("btn-ed-nz-cancel").addEventListener("click", () => {
+      newZoneForm.style.display = "none";
+    });
+
+    document.getElementById("btn-ed-nz-create").addEventListener("click", () => {
+      try {
+        const created = world.addZone({
+          id: nzId.value || `sector_${world.getZoneIds().length + 1}`,
+          title: nzTitle.value || "Новий сектор",
+          width: nzW.value,
+          height: nzH.value
+        });
+        nzId.value = "";
+        nzTitle.value = "";
+        newZoneForm.style.display = "none";
+        selectZone(created.id);
+        updateStatusLine(`Створено: ${created.id}`);
+      } catch (err) {
+        updateStatusLine(err.message || "Помилка створення");
+      }
+    });
+
+    document.getElementById("btn-ed-del-zone").addEventListener("click", () => {
+      try {
+        const z = world.getCurrentZone();
+        if (!z) return;
+        const nextId = world.deleteZone(z.id);
+        if (nextId) selectZone(nextId);
+      } catch (err) {
+        updateStatusLine(err.message || "Помилка видалення");
+      }
+    });
+
+    function openJsonModal(mode) {
+      jsonMode = mode;
+      jsonError.textContent = "";
+      if (mode === "export") {
+        jsonTitle.textContent = "Експорт світу (JSON)";
+        jsonFileRow.style.display = "none";
+        jsonText.value = JSON.stringify(world.exportWorldData(), null, 2);
+        btnJsonPrimary.textContent = "Завантажити .json";
+      } else {
+        jsonTitle.textContent = "Імпорт світу (JSON)";
+        jsonFileRow.style.display = "flex";
+        jsonFile.value = "";
+        jsonText.value = "";
+        jsonText.placeholder = "Вставте JSON світу або оберіть .json файл вище...";
+        btnJsonPrimary.textContent = "Імпортувати світ";
+      }
+      jsonModal.classList.add("open");
+    }
+
+    function closeJsonModal() {
+      jsonModal.classList.remove("open");
+    }
+
+    jsonFile.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        jsonText.value = String(reader.result || "");
+        jsonError.textContent = "";
+      };
+      reader.readAsText(file);
+    });
+
+    btnJsonPrimary.addEventListener("click", () => {
+      if (jsonMode === "export") {
+        const blob = new Blob([jsonText.value], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "shadowrun-2026-world.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        closeJsonModal();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(jsonText.value);
+        world.importWorldData(parsed);
+        selectZone(world.getZoneIds()[0]);
+        closeJsonModal();
+        updateStatusLine("Світ імпортовано");
+      } catch (err) {
+        jsonError.textContent = err.message || "Некоректний JSON формат світу";
+      }
+    });
+
+    btnJsonCopy.addEventListener("click", () => {
+      if (navigator.clipboard && jsonText.value) {
+        navigator.clipboard.writeText(jsonText.value).then(() => {
+          jsonError.style.color = "#6ee7b7";
+          jsonError.textContent = "JSON скопійовано у буфер обміну";
+          setTimeout(() => { jsonError.style.color = "#fca5a5"; }, 1600);
+        }).catch(() => {});
+      }
+    });
+
+    document.getElementById("btn-ed-json-close").addEventListener("click", closeJsonModal);
+    document.getElementById("btn-ed-export").addEventListener("click", () => openJsonModal("export"));
+    document.getElementById("btn-ed-import").addEventListener("click", () => openJsonModal("import"));
+
+    document.getElementById("btn-ed-reset").addEventListener("click", () => {
+      world.resetWorldData();
+      selectZone(world.getZoneIds()[0]);
+      updateStatusLine("Скинуто до базового світу");
+    });
+
+    document.getElementById("btn-ed-menu").addEventListener("click", () => {
+      close();
+      onExitMenu();
+    });
+
+    document.getElementById("btn-ed-playtest").addEventListener("click", () => {
+      const zid = world.getCurrentZone()?.id || world.getZoneIds()[0];
+      close();
+      onPlaytest(zid);
+    });
+
+    function open(preferredZoneId = null) {
+      const st = store.get();
+      st.mode = "EDITOR";
+      st.thermalActive = false;
+      st.overclockTimer = 0;
+      const targetId = preferredZoneId && world.ZONES[preferredZoneId]
+        ? preferredZoneId
+        : (world.ZONES[st.zoneId] ? st.zoneId : world.getZoneIds()[0]);
+      editorEl.classList.add("open");
+      selectZone(targetId);
+      window.focus();
+    }
+
+    function close() {
+      painting = false;
+      panning = false;
+      closeJsonModal();
+      editorEl.classList.remove("open");
+    }
+
+    function update(dt) {
+      if (!isActive() || isModalOpen()) return;
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT")) return;
+      const mv = input.getScreenMoveVector();
+      if (mv.x !== 0 || mv.y !== 0) {
+        const cam = store.get().camera;
+        cam.x += mv.x * 420 * dt;
+        cam.y += mv.y * 420 * dt;
+      }
+    }
+
+    function getOverlay() {
+      return {
+        hoverTile,
+        selectedPortalId,
+        activeTool
+      };
+    }
+
+    return {
+      open,
+      close,
+      closeJsonModal,
+      update,
+      getOverlay,
+      selectZone,
+      isModalOpen
+    };
+  }
+
+  /* ============================================================================
+   * MODULE 11D: MINIMAP_HUD (Sector Radar, Fog-of-War & Quest Waypoints)
+   * Dependencies: STATE_STORE, WORLD_MAP
+   * Exports: createMinimapHud({ store, world })
+   * Seam note: Tactical corner minimap with exploration persistence & M toggle
+   * ========================================================================== */
+  function createMinimapHud({ store, world }) {
+    const panelEl = document.getElementById("minimap-panel");
+    const toggleBtn = document.getElementById("minimap-toggle");
+    const zoneTagEl = document.getElementById("minimap-zone-tag");
+    const coordsEl = document.getElementById("minimap-coords");
+    const canvasEl = document.getElementById("minimap-canvas");
+    const playtestBarEl = document.getElementById("playtest-bar");
+    const ctx = canvasEl.getContext("2d");
+
+    const WIDTH = 190;
+    const HEIGHT = 140;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvasEl.width = WIDTH * dpr;
+    canvasEl.height = HEIGHT * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    function syncVisibility() {
+      const visible = store.getSetting("minimapVisible");
+      panelEl.classList.toggle("collapsed", !visible);
+      if (playtestBarEl) {
+        playtestBarEl.style.bottom = visible ? "214px" : "56px";
+      }
+    }
+
+    function toggle() {
+      const next = !store.getSetting("minimapVisible");
+      store.setSetting("minimapVisible", next);
+      syncVisibility();
+      return next;
+    }
+
+    function setPanelShown(show) {
+      panelEl.style.display = show ? "flex" : "none";
+      if (show) syncVisibility();
+    }
+
+    toggleBtn.addEventListener("click", toggle);
+    syncVisibility();
+
+    function updateDiscovery() {
+      const st = store.get();
+      if (st.mode !== "PLAYING") return;
+      const z = world.getCurrentZone();
+      if (!z) return;
+      const p = st.player;
+      const thermalLvl = st.thermalActive ? store.getThermalLevel() : 0;
+      const radius = 3.8 + (thermalLvl > 0 ? 1.4 * thermalLvl : 0);
+
+      const minTx = Math.max(0, Math.floor(p.x - radius));
+      const maxTx = Math.min(z.width - 1, Math.ceil(p.x + radius));
+      const minTy = Math.max(0, Math.floor(p.y - radius));
+      const maxTy = Math.min(z.height - 1, Math.ceil(p.y + radius));
+
+      for (let ty = minTy; ty <= maxTy; ty++) {
+        for (let tx = minTx; tx <= maxTx; tx++) {
+          if (Math.hypot(tx + 0.5 - p.x, ty + 0.5 - p.y) <= radius) {
+            store.markTileExplored(z.id, tx, ty);
+          }
+        }
+      }
+
+      let foundNewTerminal = false;
+      for (const term of z.terminals) {
+        const dist = Math.hypot(term.x - p.x, term.y - p.y);
+        if (term.hidden) {
+          const irRevealed = thermalLvl >= 2 && dist <= 7.5;
+          if (dist <= 1.85 || irRevealed || store.isTerminalUsed(term.id)) {
+            if (store.markTerminalDiscovered(term.id)) foundNewTerminal = true;
+          }
+        } else {
+          const tx = Math.floor(term.x);
+          const ty = Math.floor(term.y);
+          if (dist <= radius + 0.8 || store.isTileExplored(z.id, tx, ty)) {
+            if (store.markTerminalDiscovered(term.id)) foundNewTerminal = true;
+          }
+        }
+      }
+      if (foundNewTerminal && !st.playtestMode) {
+        store.save({ silent: true });
+      }
+    }
+
+    function resolveQuestTargets(st, z) {
+      const targets = [];
+      const addTarget = (x, y, color = "#f59e0b", label = "ЦІЛЬ") => {
+        targets.push({ x, y, color, label });
+      };
+
+      const hasCampaignZones = Boolean(world.ZONES.alley && world.ZONES.transit && world.ZONES.vault);
+      if (!st.playtestMode && hasCampaignZones) {
+        if (!st.flags.gotContract) {
+          if (z.id === "alley") {
+            const marta = z.npcs.find((n) => n.id === "marta");
+            if (marta) addTarget(marta.x, marta.y, "#f59e0b", "МАРТА");
+          } else {
+            const pBack = z.terminals.find((t) => t.type === "PORTAL");
+            if (pBack) addTarget(pBack.x, pBack.y, "#f59e0b", "ШЛЮЗ");
+          }
+        } else if (!st.flags.hasSectorKey && !st.flags.transitGateOpen) {
+          if (z.id === "alley") {
+            const enemies = st.entities.filter((e) => e.zone === "alley" && e.team === "enemy" && e.hp > 0);
+            if (enemies.length > 0) {
+              enemies.forEach((e) => addTarget(e.x, e.y, "#f59e0b", "ЦІЛЬ"));
+            } else {
+              const cache = z.npcs.find((n) => n.id === "cache");
+              if (cache) addTarget(cache.x, cache.y, "#22d3ee", "КЕШ");
+              const portal = z.terminals.find((t) => t.id === "gate_alley_transit" || t.targetZone === "transit");
+              if (portal) addTarget(portal.x, portal.y, "#fbbf24", "СЕКТОР 2");
+            }
+          } else {
+            const pBack = z.terminals.find((t) => t.type === "PORTAL");
+            if (pBack) addTarget(pBack.x, pBack.y, "#f59e0b", "ШЛЮЗ");
+          }
+        } else if (!st.flags.vaultGateOpen) {
+          if (z.id === "alley") {
+            const portal = z.terminals.find((t) => t.targetZone === "transit");
+            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СЕКТОР 2");
+          } else if (z.id === "transit") {
+            const gate = z.terminals.find((t) => t.type === "HACK_GATE" && !store.isTerminalUsed(t.id));
+            if (gate) addTarget(gate.x, gate.y, "#22d3ee", "ЗЛАМ");
+          }
+        } else if (!st.flags.bossDefeated) {
+          if (z.id === "alley") {
+            const portal = z.terminals.find((t) => t.targetZone === "transit");
+            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СЕКТОР 2");
+          } else if (z.id === "transit") {
+            const portal = z.terminals.find((t) => t.targetZone === "vault");
+            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СХОВИЩЕ");
+          } else if (z.id === "vault") {
+            const boss = st.entities.find((e) => e.zone === "vault" && e.kind === "boss" && e.hp > 0);
+            if (boss) addTarget(boss.x, boss.y, "#ef4444", "БОС");
+          }
+        } else if (!st.flags.extracted) {
+          if (z.id === "vault") {
+            const ext = z.terminals.find((t) => t.type === "EXTRACT");
+            if (ext) addTarget(ext.x, ext.y, "#10b981", "ЯДРО");
+          } else {
+            const target = z.id === "alley" ? "transit" : "vault";
+            const portal = z.terminals.find((t) => t.targetZone === target);
+            if (portal) addTarget(portal.x, portal.y, "#10b981", "ДО ЯДРА");
+          }
+        }
+      }
+
+      // Custom / Playtest zone fallback markers when no built-in quest target matched
+      if (targets.length === 0) {
+        for (const t of z.terminals) {
+          if (store.isTerminalUsed(t.id)) continue;
+          if (t.type === "EXTRACT") addTarget(t.x, t.y, "#10b981", "ФІНІШ");
+          else if (t.type === "HACK_GATE" || t.type === "HACK_CRYPTO" || t.type === "HACK_TURRETS") {
+            addTarget(t.x, t.y, "#22d3ee", "ЗЛАМ");
+          } else if (t.type === "PORTAL") {
+            addTarget(t.x, t.y, "#f59e0b", "ШЛЮЗ");
+          }
+        }
+      }
+
+      return targets;
+    }
+
+    function render(nowMs) {
+      const st = store.get();
+      if (st.mode === "TITLE" || st.mode === "EDITOR") {
+        setPanelShown(false);
+        return;
+      }
+      setPanelShown(true);
+
+      const z = world.getCurrentZone();
+      if (!z) return;
+      const p = st.player;
+
+      const shortTitle = z.title.includes("·") ? z.title.split("·")[1].trim() : z.title;
+      zoneTagEl.textContent = shortTitle;
+      coordsEl.textContent = `${Math.floor(p.x)},${Math.floor(p.y)}`;
+
+      if (!store.getSetting("minimapVisible")) return;
+
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = "#060a12";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      const pad = 8;
+      const scale = Math.min((WIDTH - pad * 2) / z.width, (HEIGHT - pad * 2) / z.height);
+      const mapW = z.width * scale;
+      const mapH = z.height * scale;
+      const ox = (WIDTH - mapW) * 0.5;
+      const oy = (HEIGHT - mapH) * 0.5;
+
+      // 1. Tiles & Fog of War
+      for (let ty = 0; ty < z.height; ty++) {
+        for (let tx = 0; tx < z.width; tx++) {
+          const explored = store.isTileExplored(z.id, tx, ty);
+          const rx = ox + tx * scale;
+          const ry = oy + ty * scale;
+          if (!explored) {
+            ctx.fillStyle = "rgba(15, 23, 42, 0.28)";
+            ctx.fillRect(rx, ry, scale - 0.3, scale - 0.3);
+            continue;
+          }
+          const tile = z.grid[ty][tx];
+          let col = "#192338";
+          if (tile === 1) col = "#24324c";
+          else if (tile === 2) col = "#0e3b52";
+          else if (tile === 3) col = "#475569";
+          else if (tile === 4) col = "#543616";
+          else if (tile === 5) col = "#0d4f3c";
+          ctx.fillStyle = col;
+          ctx.fillRect(rx, ry, scale + 0.25, scale + 0.25);
+        }
+      }
+
+      // Subtle sector perimeter frame
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.22)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(ox, oy, mapW, mapH);
+
+      // 2. Discovered Terminals & Hidden Stashes
+      for (const term of z.terminals) {
+        if (!store.isTerminalDiscovered(term.id)) continue;
+        const used = store.isTerminalUsed(term.id);
+        const mx = ox + term.x * scale;
+        const my = oy + term.y * scale;
+        if (term.type === "PORTAL") {
+          ctx.fillStyle = "#f59e0b";
+          ctx.beginPath();
+          ctx.moveTo(mx, my - 4);
+          ctx.lineTo(mx + 4, my);
+          ctx.lineTo(mx, my + 4);
+          ctx.lineTo(mx - 4, my);
+          ctx.closePath();
+          ctx.fill();
+        } else if (term.type === "STASH") {
+          ctx.fillStyle = used ? "rgba(100, 116, 139, 0.45)" : "#34d399";
+          ctx.fillRect(mx - 2.5, my - 2.5, 5, 5);
+        } else if (term.type === "EXTRACT") {
+          ctx.fillStyle = "#10b981";
+          ctx.beginPath();
+          ctx.arc(mx, my, 3.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = used ? "rgba(100, 116, 139, 0.45)" : (term.type === "VENDING" ? "#fbbf24" : "#22d3ee");
+          ctx.fillRect(mx - 2.6, my - 2.6, 5.2, 5.2);
+        }
+      }
+
+      // 3. Discovered NPCs
+      for (const npc of z.npcs) {
+        if (!store.isTileExplored(z.id, Math.floor(npc.x), Math.floor(npc.y))) continue;
+        const nx = ox + npc.x * scale;
+        const ny = oy + npc.y * scale;
+        ctx.fillStyle = npc.color || "#22d3ee";
+        ctx.beginPath();
+        ctx.arc(nx, ny, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 4. Nearby Enemy Radar Blips
+      const sensorRange = st.thermalActive ? 10.5 : 6.5;
+      for (const e of st.entities) {
+        if (e.zone !== z.id || e.hp <= 0 || e.kind === "crate") continue;
+        const dist = Math.hypot(e.x - p.x, e.y - p.y);
+        if (dist > sensorRange && e.kind !== "boss") continue;
+        const ex = ox + e.x * scale;
+        const ey = oy + e.y * scale;
+        ctx.fillStyle = e.team === "ally" ? "#22d3ee" : "#ef4444";
+        if (e.kind === "boss") {
+          ctx.beginPath();
+          ctx.moveTo(ex, ey - 4.5);
+          ctx.lineTo(ex + 4.5, ey);
+          ctx.lineTo(ex, ey + 4.5);
+          ctx.lineTo(ex - 4.5, ey);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 5. Pulsing Quest Objectives & Portal Beacons
+      const pulse = 0.5 + 0.5 * Math.sin(nowMs * 0.006);
+      const targets = resolveQuestTargets(st, z);
+      for (const t of targets) {
+        const tx = ox + t.x * scale;
+        const ty = oy + t.y * scale;
+        const ringR = 4.5 + pulse * 4.5;
+        ctx.strokeStyle = t.color;
+        ctx.globalAlpha = 0.9 - pulse * 0.55;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(tx, ty, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = t.color;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // 6. Player Position & Facing Wedge
+      const px = ox + p.x * scale;
+      const py = oy + p.y * scale;
+      const fLen = Math.hypot(p.facingX, p.facingY) || 1;
+      const fx = p.facingX / fLen;
+      const fy = p.facingY / fLen;
+
+      ctx.fillStyle = "rgba(34, 211, 238, 0.32)";
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + (fx * 10 - fy * 4.5), py + (fy * 10 + fx * 4.5));
+      ctx.lineTo(px + (fx * 10 + fy * 4.5), py + (fy * 10 - fx * 4.5));
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.strokeStyle = "#080d16";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    return {
+      toggle,
+      updateDiscovery,
+      render,
+      resolveQuestTargets
+    };
+  }
+
+  /* ============================================================================
    * MODULE 12: HUD_UI & KERNEL_BOOTSTRAP
-   * Dependencies: All modules (01..11)
+   * Dependencies: All modules (01..11D)
    * Exports: AppKernel (clean orchestrator connecting all seams)
    * Seam note: Main entry point; replace with framework router/shell in modular build
    * ========================================================================== */
   const canvas = document.getElementById("world-canvas");
+  const rainCanvas = document.getElementById("rain-shader-canvas");
   const bus = createEventBus();
   const store = createStateStore({ config: CONFIG, bus });
   const input = createInputManager({ canvas });
@@ -3054,6 +5925,25 @@
   const hacking = createHackingMatrix({ store, bus, world });
   const dialogue = createDialogueQuest({ config: CONFIG, store, bus });
   const renderer = createRenderer({ canvas, config: CONFIG, store, world });
+  const rainShader = createRainShader({ canvas: rainCanvas, store });
+  const minimapHud = createMinimapHud({ store, world });
+  let lastEditorZoneId = world.getZoneIds()[0] || "alley";
+  let playtestZoneId = lastEditorZoneId;
+  const playtestBar = document.getElementById("playtest-bar");
+  const btnReturnEditor = document.getElementById("btn-return-editor");
+  const worldEditor = createWorldEditor({
+    config: CONFIG,
+    store,
+    world,
+    bus,
+    input,
+    canvas,
+    onPlaytest: (zid) => launchPlaytest(zid),
+    onExitMenu: () => {
+      store.get().mode = "TITLE";
+      modalTitle.classList.add("open");
+    }
+  });
 
   // DOM HUD bindings
   const hudTop = document.getElementById("hud-top");
@@ -3070,7 +5960,7 @@
   const questEl = document.getElementById("hud-quest");
   const comboBadge = document.getElementById("combo-badge");
   const comboNum = document.getElementById("combo-num");
-  const toastStack = document.getElementById("toast-stack");
+  const eventConsoleEl = document.getElementById("event-console");
 
   const modalTitle = document.getElementById("modal-title");
   const modalSys = document.getElementById("modal-system");
@@ -3078,39 +5968,308 @@
   const sysSub = document.getElementById("sys-sub");
   const sysBody = document.getElementById("sys-body");
   const sysStats = document.getElementById("sys-stats");
+  const sysSettings = document.getElementById("sys-settings");
+  const rainSlider = document.getElementById("rain-slider");
+  const rainValLabel = document.getElementById("rain-val-label");
+  const rainPresets = document.querySelectorAll("#rain-presets .preset-btn");
   const btnSysPrimary = document.getElementById("btn-sys-primary");
   const btnContinue = document.getElementById("btn-continue-save");
+  const autosaveEl = document.getElementById("hud-autosave");
+  let autosaveTimer = null;
 
   if (store.hasSave()) btnContinue.style.display = "inline-block";
 
-  bus.on("state:toast", (msg) => {
-    const el = document.createElement("div");
-    el.className = "toast-msg";
-    el.textContent = msg;
-    toastStack.appendChild(el);
-    setTimeout(() => el.remove(), 2600);
+  function syncRainSettingsUI(intensity) {
+    const pct = Math.round(intensity * 100);
+    rainSlider.value = String(pct);
+    rainValLabel.textContent = `${pct}%`;
+    rainPresets.forEach((btn) => {
+      btn.classList.toggle("active", Number(btn.dataset.rain) === pct);
+    });
+  }
+
+  syncRainSettingsUI(store.getSetting("rainIntensity"));
+
+  rainSlider.addEventListener("input", (e) => {
+    const val = Number(e.target.value) / 100;
+    store.setSetting("rainIntensity", val, { silent: true });
+    syncRainSettingsUI(val);
   });
+
+  rainSlider.addEventListener("change", (e) => {
+    const pct = Number(e.target.value);
+    eventConsole.push("SYS", `Опади (шейдер): ${pct}%`);
+  });
+
+  rainPresets.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pct = Number(btn.dataset.rain);
+      const val = pct / 100;
+      store.setSetting("rainIntensity", val, { silent: false });
+      syncRainSettingsUI(val);
+      eventConsole.push("SYS", `Опади (шейдер): ${pct}%`);
+    });
+  });
+
+  function createEventConsole({ container, maxLines = 5, ttlMs = 3000 }) {
+    const entries = [];
+    let seq = 0;
+
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      const ss = String(date.getSeconds()).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function removeEntry(entry) {
+      clearTimeout(entry.ttlTimer);
+      clearTimeout(entry.fadeTimer);
+      const idx = entries.indexOf(entry);
+      if (idx !== -1) entries.splice(idx, 1);
+      entry.el.remove();
+    }
+
+    function scheduleRemoval(entry) {
+      clearTimeout(entry.ttlTimer);
+      clearTimeout(entry.fadeTimer);
+      entry.ttlTimer = setTimeout(() => {
+        entry.el.classList.remove("visible");
+        entry.el.classList.add("fading");
+        entry.fadeTimer = setTimeout(() => removeEntry(entry), 180);
+      }, ttlMs);
+    }
+
+    function push(category, text) {
+      if (!text) return;
+      const now = Date.now();
+      const dup = entries.find(
+        (item) => item.category === category && item.text === text && now - item.createdAt < 500
+      );
+      if (dup) {
+        dup.createdAt = now;
+        scheduleRemoval(dup);
+        return;
+      }
+
+      const el = document.createElement("div");
+      el.className = "event-line";
+
+      const timeEl = document.createElement("span");
+      timeEl.className = "event-time";
+      timeEl.textContent = formatTime(new Date(now));
+
+      const sep1 = document.createElement("span");
+      sep1.className = "event-sep";
+      sep1.textContent = "·";
+
+      const catEl = document.createElement("span");
+      catEl.className = `event-cat cat-${category}`;
+      catEl.textContent = category;
+
+      const sep2 = document.createElement("span");
+      sep2.className = "event-sep";
+      sep2.textContent = "·";
+
+      const textEl = document.createElement("span");
+      textEl.className = "event-text";
+      textEl.textContent = text;
+
+      el.append(timeEl, sep1, catEl, sep2, textEl);
+      container.appendChild(el);
+
+      const entry = { id: ++seq, category, text, createdAt: now, el, ttlTimer: null, fadeTimer: null };
+      entries.push(entry);
+
+      while (entries.length > maxLines) {
+        removeEntry(entries[0]);
+      }
+
+      requestAnimationFrame(() => el.classList.add("visible"));
+      scheduleRemoval(entry);
+    }
+
+    function clear() {
+      while (entries.length > 0) removeEntry(entries[0]);
+    }
+
+    return { push, clear };
+  }
+
+  const eventConsole = createEventConsole({
+    container: eventConsoleEl,
+    maxLines: 5,
+    ttlMs: 3000
+  });
+
+  function classifyToastCategory(text) {
+    if (/₵|HP|рамен|Встановлено|Data-Key|Карма/i.test(text)) return "LOOT";
+    if (/Злам|Шлюз|турелі|ICE/i.test(text)) return "HACK";
+    if (/БОС|Сектор|Хімера|Ключ/i.test(text)) return "QUEST";
+    return "SYS";
+  }
+
+  function showAutosaveStatus(text, highlight = true) {
+    autosaveEl.textContent = text;
+    if (highlight) {
+      autosaveEl.classList.add("saved");
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => {
+        autosaveEl.classList.remove("saved");
+      }, 1500);
+    }
+  }
+
+  bus.on("state:autosaved", ({ silent } = {}) => {
+    showAutosaveStatus("Автозбережено", true);
+    btnContinue.style.display = "inline-block";
+    eventConsole.push("SAVE", silent ? "Автозбережено в localStorage" : "Гру збережено в пам'ять");
+  });
+
+  bus.on("state:loaded", () => {
+    showAutosaveStatus("Завантажено", true);
+    eventConsole.push("SAVE", "Збережену сесію відновлено");
+  });
+
+  bus.on("entity:killed", (payload) => {
+    if (!payload) return;
+    const entity = payload.entity || payload;
+    const parts = [];
+    if (payload.credits) parts.push(`+${payload.credits} ₵`);
+    if (payload.karma) parts.push(`+${payload.karma} Карма`);
+    if (payload.ammo) parts.push(`+${payload.ammo} наб.`);
+    if (payload.heal) parts.push(`+${payload.heal} HP`);
+    if (parts.length > 0) {
+      eventConsole.push("LOOT", `${entity.name}: ${parts.join(" · ")}`);
+    }
+  });
+
+  bus.on("quest:update", () => {
+    eventConsole.push("QUEST", store.get().questText);
+  });
+
+  bus.on("zone:change", (zone) => {
+    if (zone?.title) eventConsole.push("QUEST", `Перехід: ${zone.title}`);
+  });
+
+  bus.on("hack:fail", () => {
+    eventConsole.push("HACK", "Тривога ICE — з'єднання розірвано");
+  });
+
+  bus.on("state:toast", (payload) => {
+    if (typeof payload === "string") {
+      if (payload === "Гру збережено в пам'ять") return; // handled by state:autosaved
+      eventConsole.push(classifyToastCategory(payload), payload);
+    } else if (payload && payload.text) {
+      eventConsole.push(payload.category || "SYS", payload.text);
+    }
+  });
+
+  function findSafeSpawn(zoneId, prefX = 2.5, prefY = 5.5) {
+    const z = world.ZONES[zoneId];
+    if (!z) return { x: 2.5, y: 5.5 };
+    const cx = Math.max(1.2, Math.min(z.width - 1.2, Number(prefX) || 2.5));
+    const cy = Math.max(1.2, Math.min(z.height - 1.2, Number(prefY) || 5.5));
+    if (!world.isSolid(zoneId, cx, cy)) return { x: cx, y: cy };
+    for (let ty = 1; ty < z.height - 1; ty++) {
+      for (let tx = 1; tx < z.width - 1; tx++) {
+        if (z.grid[ty][tx] !== 3) return { x: tx + 0.5, y: ty + 0.5 };
+      }
+    }
+    return { x: 2.5, y: 2.5 };
+  }
+
+  function applyWorldStartPoint() {
+    const st = store.get();
+    const meta = world.getWorldMeta();
+    const startZid = world.ZONES[meta.startZone] ? meta.startZone : (world.getZoneIds()[0] || "alley");
+    const pt = findSafeSpawn(startZid, meta.startX, meta.startY);
+    st.zoneId = startZid;
+    st.player.zone = startZid;
+    st.player.x = pt.x;
+    st.player.y = pt.y;
+  }
 
   function beginPlaying() {
     audio.unlock();
     modalTitle.classList.remove("open");
     modalSys.classList.remove("open");
+    worldEditor.close();
     hudTop.style.display = "flex";
     hudBottom.style.display = "flex";
+    eventConsoleEl.style.display = "flex";
+    playtestBar.classList.toggle("visible", Boolean(store.get().playtestMode));
     store.get().mode = "PLAYING";
     world.spawnZoneEntities(store.get().zoneId);
     window.focus();
   }
 
-  document.getElementById("btn-start-new").addEventListener("click", () => {
-    world.usedTerminals.clear();
-    store.reset();
+  function launchPlaytest(zoneId) {
+    lastEditorZoneId = zoneId;
+    playtestZoneId = zoneId;
+    eventConsole.clear();
+    const st = store.reset();
+    st.playtestMode = true;
+    const meta = world.getWorldMeta();
+    const pt = meta.startZone === zoneId
+      ? findSafeSpawn(zoneId, meta.startX, meta.startY)
+      : findSafeSpawn(zoneId, 2.5, 5.5);
+    st.zoneId = zoneId;
+    st.player.zone = zoneId;
+    st.player.x = pt.x;
+    st.player.y = pt.y;
+    const zTitle = world.ZONES[zoneId]?.title || zoneId;
+    st.questText = `PLAYTEST: ${zTitle}`;
     beginPlaying();
+    eventConsole.push("SYS", `Playtest сектора: ${zTitle}`);
+  }
+
+  function returnToEditor() {
+    const st = store.get();
+    st.playtestMode = false;
+    st.thermalActive = false;
+    st.overclockTimer = 0;
+    playtestBar.classList.remove("visible");
+    modalSys.classList.remove("open");
+    document.getElementById("modal-dialogue").classList.remove("open");
+    document.getElementById("modal-hack").classList.remove("open");
+    document.getElementById("modal-shop").classList.remove("open");
+    hudTop.style.display = "none";
+    hudBottom.style.display = "none";
+    eventConsoleEl.style.display = "none";
+    eventConsole.clear();
+    worldEditor.open(lastEditorZoneId);
+  }
+
+  document.getElementById("btn-open-editor").addEventListener("click", () => {
+    audio.unlock();
+    modalTitle.classList.remove("open");
+    hudTop.style.display = "none";
+    hudBottom.style.display = "none";
+    eventConsoleEl.style.display = "none";
+    playtestBar.classList.remove("visible");
+    worldEditor.open(lastEditorZoneId);
+  });
+
+  btnReturnEditor.addEventListener("click", returnToEditor);
+
+  document.getElementById("btn-start-new").addEventListener("click", () => {
+    eventConsole.clear();
+    const st = store.reset();
+    st.playtestMode = false;
+    applyWorldStartPoint();
+    beginPlaying();
+    eventConsole.push("QUEST", store.get().questText);
+    store.save({ silent: true });
   });
 
   btnContinue.addEventListener("click", () => {
-    world.usedTerminals.clear();
-    if (store.load()) beginPlaying();
+    eventConsole.clear();
+    if (store.load()) {
+      store.get().playtestMode = false;
+      beginPlaying();
+      eventConsole.push("QUEST", store.get().questText);
+    }
   });
 
   document.getElementById("btn-audio-toggle").addEventListener("click", (e) => {
@@ -3118,26 +6277,51 @@
     e.currentTarget.textContent = `Звук: ${on ? "Увімк" : "Вимк"}`;
   });
 
-  document.getElementById("btn-save-game").addEventListener("click", () => store.save());
-  document.getElementById("btn-pause-game").addEventListener("click", openPause);
+  document.getElementById("btn-save-game").addEventListener("click", () => store.save({ silent: false }));
+  document.getElementById("btn-settings-game").addEventListener("click", () => openPause(true));
+  document.getElementById("btn-pause-game").addEventListener("click", () => openPause(false));
 
   document.querySelectorAll(".skill-slot").forEach((el) => {
-    el.addEventListener("click", () => combat.useQuickHack(el.dataset.skill));
+    el.addEventListener("click", () => {
+      if (el.dataset.skill === "thermal") combat.toggleThermal();
+      else combat.useQuickHack(el.dataset.skill);
+    });
   });
 
-  function openPause() {
+  const btnSysRestart = document.getElementById("btn-sys-restart");
+
+  function openPause(isSettings = false) {
     const st = store.get();
     if (st.mode !== "PLAYING") return;
     st.mode = "PAUSED";
-    sysTitle.textContent = "Пауза";
-    sysSub.textContent = "РЕЙД ПРИЗУПИНЕНО";
-    sysBody.textContent = "Усі процеси призупинено. Ви можете повернутися до бою або перезапустити рейд.";
+    sysTitle.textContent = isSettings ? "Налаштування" : (st.playtestMode ? "Пауза (Playtest)" : "Пауза та налаштування");
+    sysSub.textContent = isSettings ? "ГРАФІКА І АТМОСФЕРА" : (st.playtestMode ? "РЕЖИМ ПЕРЕВІРКИ РІВНЯ" : "РЕЙД ПРИЗУПИНЕНО");
+    sysBody.textContent = st.playtestMode
+      ? "Ви тестуєте світ із редактора. Збереження кампанії не зачіпається — можете будь-коли повернутися до редагування."
+      : "Відрегулюйте інтенсивність шейдерних опадів у реальному часі або поверніться до бою.";
+    sysSettings.style.display = "block";
     sysStats.style.display = "none";
+    syncRainSettingsUI(store.getSetting("rainIntensity"));
     btnSysPrimary.textContent = "Продовжити";
     btnSysPrimary.onclick = () => {
       modalSys.classList.remove("open");
       st.mode = "PLAYING";
     };
+    if (st.playtestMode) {
+      btnSysRestart.textContent = "До редактора";
+      btnSysRestart.onclick = returnToEditor;
+    } else {
+      btnSysRestart.textContent = "Почати заново";
+      btnSysRestart.onclick = () => {
+        eventConsole.clear();
+        const fresh = store.reset();
+        fresh.playtestMode = false;
+        applyWorldStartPoint();
+        beginPlaying();
+        eventConsole.push("QUEST", store.get().questText);
+        store.save({ silent: true });
+      };
+    }
     modalSys.classList.add("open");
   }
 
@@ -3148,6 +6332,7 @@
     sysBody.textContent = victory
       ? "Ви пробилися крізь Zero-Trust охорону Kuroda-Bio та витягли ваги проєкту «Хімера». Сектор «Синтез-7» вільний від корпоративної зачистки."
       : "Корпоративна охорона нейтралізувала вашу нейромережу. Перезапустіть рейд і скористайтеся імплантами Дока та швидкими хаками.";
+    sysSettings.style.display = "none";
     sysStats.style.display = "block";
     sysStats.innerHTML = `
       <div>Ворогів нейтралізовано: <strong>${st.stats.kills}</strong></div>
@@ -3155,20 +6340,27 @@
       <div>Максимальне комбо: <strong>${st.stats.maxCombo}x</strong></div>
       <div>Зароблено кредитів: <strong>${st.stats.creditsEarned} ₵</strong></div>
     `;
-    btnSysPrimary.textContent = "Грати знову";
-    btnSysPrimary.onclick = () => {
-      world.usedTerminals.clear();
-      store.reset();
-      beginPlaying();
-    };
+    if (st.playtestMode) {
+      btnSysPrimary.textContent = "Повторити Playtest";
+      btnSysPrimary.onclick = () => launchPlaytest(playtestZoneId);
+      btnSysRestart.textContent = "До редактора";
+      btnSysRestart.onclick = returnToEditor;
+    } else {
+      btnSysPrimary.textContent = "Грати знову";
+      btnSysPrimary.onclick = () => {
+        eventConsole.clear();
+        const fresh = store.reset();
+        fresh.playtestMode = false;
+        applyWorldStartPoint();
+        beginPlaying();
+        eventConsole.push("QUEST", store.get().questText);
+        store.save({ silent: true });
+      };
+      btnSysRestart.textContent = "Почати заново";
+      btnSysRestart.onclick = btnSysPrimary.onclick;
+    }
     modalSys.classList.add("open");
   }
-
-  document.getElementById("btn-sys-restart").addEventListener("click", () => {
-    world.usedTerminals.clear();
-    store.reset();
-    beginPlaying();
-  });
 
   bus.on("game:over", () => showEndModal(false));
   bus.on("game:victory", () => showEndModal(true));
@@ -3186,6 +6378,7 @@
         st.player.credits -= 30;
         st.player.hp = Math.min(st.player.maxHp, st.player.hp + 45);
         bus.emit("pickup:reward");
+        bus.emit("state:dirty");
         bus.emit("state:toast", "Синт-рамен куплено: +45 HP");
       } else {
         bus.emit("state:toast", st.player.hp >= st.player.maxHp ? "HP уже повне" : "Потрібно 30 ₵");
@@ -3206,6 +6399,18 @@
       world.changeZone(term.targetZone, term.spawnX, term.spawnY);
     } else if (term.type === "HACK_CRYPTO" || term.type === "HACK_GATE" || term.type === "HACK_TURRETS") {
       hacking.start(term);
+    } else if (term.type === "STASH") {
+      store.markTerminalUsed(term.id);
+      const cred = term.rewardCredits || 80;
+      const ammo = term.rewardAmmo || 4;
+      const karma = term.rewardKarma || 1;
+      st.player.credits += cred;
+      st.stats.creditsEarned += cred;
+      st.player.ammo = Math.min(st.player.maxAmmo, st.player.ammo + ammo);
+      st.player.karma += karma;
+      bus.emit("pickup:reward");
+      bus.emit("state:dirty");
+      bus.emit("state:toast", `Прихований тайник: +${cred} ₵ · +${ammo} наб. · +${karma} Карма`);
     } else if (term.type === "EXTRACT") {
       if (!st.flags.bossDefeated) {
         bus.emit("state:toast", "Спочатку нейтралізуйте АГЕНТА-09!");
@@ -3241,8 +6446,23 @@
       comboBadge.classList.remove("visible");
     }
 
+    const thermalLevel = store.getThermalLevel();
+    const thermalMetaEl = document.getElementById("thermal-slot-meta");
+    if (thermalMetaEl) {
+      const drain = Math.max(1.8, CONFIG.SKILLS.thermal.baseDrain - (thermalLevel - 1) * CONFIG.SKILLS.thermal.drainReductionPerTier);
+      thermalMetaEl.textContent = st.thermalActive
+        ? `Рів.${thermalLevel} · УВІМК`
+        : `Рів.${thermalLevel} · ${drain.toFixed(1)} RAM/с`;
+    }
+
     document.querySelectorAll(".skill-slot").forEach((el) => {
       const k = el.dataset.skill;
+      if (k === "thermal") {
+        const ready = st.thermalActive || p.ram >= CONFIG.SKILLS.thermal.minRam;
+        el.classList.toggle("disabled", !ready);
+        el.classList.toggle("active-thermal", st.thermalActive);
+        return;
+      }
       const spec = CONFIG.SKILLS[k];
       const ready = p.ram >= spec.cost && p.skillCd[k] <= 0;
       el.classList.toggle("disabled", !ready);
@@ -3253,9 +6473,15 @@
   // Main Loop
   let lastTime = performance.now();
   let accumulator = 0;
+  let shaderTime = 0;
 
-  window.addEventListener("resize", () => renderer.resize());
-  renderer.resize();
+  function resizeAll() {
+    renderer.resize();
+    rainShader.resize();
+  }
+
+  window.addEventListener("resize", resizeAll);
+  resizeAll();
 
   function frame(now) {
     const rawDt = Math.min(0.05, (now - lastTime) / 1000);
@@ -3264,18 +6490,35 @@
 
     // Global Esc handling
     if (input.wasPressed("Escape")) {
-      if (st.mode === "PLAYING") openPause();
+      if (st.mode === "PLAYING") openPause(false);
       else if (st.mode === "PAUSED") { modalSys.classList.remove("open"); st.mode = "PLAYING"; }
       else if (st.mode === "DIALOGUE") dialogue.closeDialogue();
       else if (st.mode === "SHOP") dialogue.closeShop();
       else if (st.mode === "HACKING") hacking.abort();
+      else if (st.mode === "EDITOR") {
+        if (worldEditor.isModalOpen()) worldEditor.closeJsonModal();
+        else {
+          worldEditor.close();
+          st.mode = "TITLE";
+          modalTitle.classList.add("open");
+        }
+      }
     }
 
-    // Rain update
-    for (const r of st.rainDrops) {
-      r.y += r.speed * rawDt;
-      r.x -= r.speed * 0.14 * rawDt;
-      if (r.y > 1) { r.y = -0.05; r.x = Math.random(); }
+    // Minimap toggle (M) during active gameplay
+    if (input.wasPressed("KeyM") && (st.mode === "PLAYING" || st.mode === "PAUSED")) {
+      minimapHud.toggle();
+    }
+
+    // Rain update (used by fallback 2D renderer + shader time)
+    const rainTimeScale = st.overclockTimer > 0 ? 0.32 : 1.0;
+    shaderTime += rawDt * rainTimeScale;
+    if (!rainShader.isWebGL()) {
+      for (const r of st.rainDrops) {
+        r.y += r.speed * rawDt * rainTimeScale;
+        r.x -= r.speed * 0.14 * rawDt * rainTimeScale;
+        if (r.y > 1) { r.y = -0.05; r.x = Math.random(); }
+      }
     }
 
     let nearby = null;
@@ -3296,12 +6539,21 @@
           accumulator -= CONFIG.FIXED_DT;
         }
       }
+      minimapHud.updateDiscovery();
       syncHud();
     } else if (st.mode === "HACKING") {
       hacking.update(rawDt);
+    } else if (st.mode === "EDITOR") {
+      worldEditor.update(rawDt);
     }
 
-    renderer.render(nearby);
+    renderer.render(nearby, st.mode === "EDITOR" ? worldEditor.getOverlay() : null);
+    minimapHud.render(now);
+    rainShader.render(
+      shaderTime,
+      store.getSetting("rainIntensity"),
+      st.overclockTimer > 0 ? 1.0 : 0.0
+    );
     input.endFrame();
     requestAnimationFrame(frame);
   }

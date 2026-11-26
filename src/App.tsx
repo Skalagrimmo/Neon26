@@ -38,7 +38,7 @@ const MODULE_SEAMS: ModuleSeam[] = [
     targetFile: 'src/core/stateStore.ts',
     deps: 'CONFIG, EVENT_BUS',
     exports: 'createStateStore()',
-    responsibility: 'Єдине джерело істини для стану гри, гравця, ворогів та localStorage-збережень.'
+    responsibility: 'Єдине джерело істини, реактивне автозбереження прогресу й окремі налаштування (опади) у localStorage.'
   },
   {
     index: '04',
@@ -102,15 +102,39 @@ const MODULE_SEAMS: ModuleSeam[] = [
     targetFile: 'src/render/isometricRenderer.ts',
     deps: 'CONFIG, STATE_STORE, WORLD_MAP',
     exports: 'createRenderer()',
-    responsibility: 'Чистий Canvas 2D рендер, сортування глибини, дощ, тіні, післяобрази та телеграфи.'
+    responsibility: 'Чистий Canvas 2D рендер, сортування глибини, тіні, післяобрази та телеграфи атак.'
+  },
+  {
+    index: '11B',
+    name: 'RAIN_SHADER',
+    targetFile: 'src/render/rainShader.ts',
+    deps: 'STATE_STORE',
+    exports: 'createRainShader()',
+    responsibility: 'WebGL GLSL-шейдер дощу (3 паралакс-шари, брижі, неонові відблиски) поверх сцени з 2D-резервом.'
+  },
+  {
+    index: '11C',
+    name: 'WORLD_EDITOR',
+    targetFile: 'src/editor/worldEditor.ts',
+    deps: 'CONFIG, STATE_STORE, WORLD_MAP, EVENT_BUS, INPUT_MANAGER',
+    exports: 'createWorldEditor()',
+    responsibility: 'Редактор рівнів і світу (Sandbox), створення секторів, миттєвий Playtest і JSON-серіалізація.'
+  },
+  {
+    index: '11D',
+    name: 'MINIMAP_HUD',
+    targetFile: 'src/hud/minimapHud.ts',
+    deps: 'STATE_STORE, WORLD_MAP',
+    exports: 'createMinimapHud()',
+    responsibility: 'Динамічна міні-карта з туманом війни, пам’яттю терміналів, сенсором ворогів і маркерами квестів.'
   },
   {
     index: '12',
     name: 'HUD_UI & KERNEL',
     targetFile: 'src/main.ts',
-    deps: 'Модулі 01–11',
+    deps: 'Модулі 01–11D',
     exports: 'AppKernel',
-    responsibility: 'Збірка залежностей (DI), оновлення DOM HUD і фіксований ігровий цикл 60 Гц.'
+    responsibility: 'Збірка залежностей (DI), HUD, консоль подій, меню налаштувань і фіксований ігровий цикл 60 Гц.'
   }
 ];
 
@@ -121,6 +145,8 @@ const CONTROLS = [
   ['K / ПКМ', 'Важкий удар (пробиває щити, підкидає у повітря)'],
   ['L / Q', 'Смарт-пістолет з автонаведенням'],
   ['1 · 2 · 3', 'Промпт-ін’єкція · Розгін-26 (Slow-Mo) · Sub-GHz EMP'],
+  ['T', 'Термо-зір (вороги крізь стіни та приховані схованки)'],
+  ['M', 'Міні-карта сектора (згорнути або розгорнути)'],
   ['E', 'Розмова з NPC / Термінали / Портали'],
   ['Esc', 'Пауза або вихід із модального вікна']
 ];
@@ -199,7 +225,7 @@ export default function App() {
             }`}
           >
             <Layers className="h-3.5 w-3.5" />
-            <span>Шви модулів (12)</span>
+            <span>Шви модулів (15)</span>
           </button>
           <button
             type="button"
@@ -246,7 +272,7 @@ export default function App() {
                     Архітектурні шви однофайлової гри
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Файл public/shadowrun-2026.html розділений на 12 ізольованих фабрик із явним впровадженням залежностей.
+                    Файл public/shadowrun-2026.html розділений на 15 ізольованих фабрик із явним впровадженням залежностей.
                   </p>
                 </div>
                 <button
