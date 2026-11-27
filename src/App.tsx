@@ -52,9 +52,9 @@ const MODULE_SEAMS: ModuleSeam[] = [
     index: '05',
     name: 'AUDIO_SYNTH',
     targetFile: 'src/audio/audioSynth.ts',
-    deps: 'EVENT_BUS',
+    deps: 'EVENT_BUS, STATE_STORE',
     exports: 'createAudioSynth()',
-    responsibility: 'Процедурний Web Audio синтез ударів, смарт-пістолета, EMP і зламів.'
+    responsibility: 'Процедурний Web Audio синтез бою, зламів та двотонального CRT UI-відгуку в стилі терміналів 90-х.'
   },
   {
     index: '06',
@@ -124,15 +124,23 @@ const MODULE_SEAMS: ModuleSeam[] = [
     index: '11D',
     name: 'MINIMAP_HUD',
     targetFile: 'src/hud/minimapHud.ts',
-    deps: 'STATE_STORE, WORLD_MAP',
+    deps: 'STATE_STORE, WORLD_MAP, QUEST_JOURNAL',
     exports: 'createMinimapHud()',
     responsibility: 'Динамічна міні-карта з туманом війни, пам’яттю терміналів, сенсором ворогів і маркерами квестів.'
+  },
+  {
+    index: '11E',
+    name: 'QUEST_JOURNAL',
+    targetFile: 'src/narrative/questJournal.ts',
+    deps: 'STATE_STORE, WORLD_MAP, EVENT_BUS',
+    exports: 'createQuestJournal()',
+    responsibility: 'Вікно журналу контрактів і побічних цілей, історія виконань та перемикання активного маркера на міні-карті.'
   },
   {
     index: '12',
     name: 'HUD_UI & KERNEL',
     targetFile: 'src/main.ts',
-    deps: 'Модулі 01–11D',
+    deps: 'Модулі 01–11E',
     exports: 'AppKernel',
     responsibility: 'Збірка залежностей (DI), HUD, консоль подій, меню налаштувань і фіксований ігровий цикл 60 Гц.'
   }
@@ -147,6 +155,7 @@ const CONTROLS = [
   ['1 · 2 · 3', 'Промпт-ін’єкція · Розгін-26 (Slow-Mo) · Sub-GHz EMP'],
   ['T', 'Термо-зір (вороги крізь стіни та приховані схованки)'],
   ['M', 'Міні-карта сектора (згорнути або розгорнути)'],
+  ['Tab / N', 'Журнал контрактів, історія завдань та навігація на міні-карті'],
   ['E', 'Розмова з NPC / Термінали / Портали'],
   ['Esc', 'Пауза або вихід із модального вікна']
 ];
@@ -167,7 +176,7 @@ export default function App() {
       const win = iframeRef.current?.contentWindow;
       if (!win) return;
       if (document.activeElement !== iframeRef.current) {
-        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) {
           e.preventDefault();
         }
         win.postMessage({ type, code: e.code }, '*');
@@ -225,7 +234,7 @@ export default function App() {
             }`}
           >
             <Layers className="h-3.5 w-3.5" />
-            <span>Шви модулів (15)</span>
+            <span>Шви модулів (16)</span>
           </button>
           <button
             type="button"
@@ -272,7 +281,7 @@ export default function App() {
                     Архітектурні шви однофайлової гри
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Файл public/shadowrun-2026.html розділений на 15 ізольованих фабрик із явним впровадженням залежностей.
+                    Файл public/shadowrun-2026.html розділений на 16 ізольованих фабрик із явним впровадженням залежностей.
                   </p>
                 </div>
                 <button

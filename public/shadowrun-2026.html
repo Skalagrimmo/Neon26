@@ -150,7 +150,7 @@
     }
 
     .quest-panel {
-      max-width: 380px;
+      max-width: 440px;
       text-align: right;
     }
 
@@ -169,10 +169,20 @@
       color: var(--text-primary);
     }
 
+    .quest-text.clickable {
+      cursor: pointer;
+      transition: color 120ms;
+    }
+
+    .quest-text.clickable:hover {
+      color: var(--accent-amber);
+    }
+
     .hud-actions {
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 6px;
       margin-top: 8px;
     }
@@ -552,13 +562,150 @@
       gap: 16px;
     }
 
-    .portrait-frame {
+    .portrait-crt-wrap {
+      position: relative;
       width: 112px;
       height: 128px;
       background: #0a101d;
       border: 1px solid rgba(6, 182, 212, 0.35);
       border-radius: 4px;
       overflow: hidden;
+      isolation: isolate;
+    }
+
+    .portrait-crt-stage {
+      width: 100%;
+      height: 100%;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .portrait-frame {
+      display: block;
+      width: 100%;
+      height: 100%;
+      will-change: opacity;
+    }
+
+    .portrait-crt-wrap::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 28px;
+      background: linear-gradient(
+        180deg,
+        rgba(6, 182, 212, 0) 0%,
+        rgba(103, 232, 249, 0.14) 50%,
+        rgba(6, 182, 212, 0) 100%
+      );
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transform: translate3d(0, -32px, 0);
+      will-change: transform, opacity;
+    }
+
+    .portrait-crt-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.04) 0px,
+          rgba(255, 255, 255, 0.04) 1px,
+          rgba(4, 8, 16, 0.24) 2px,
+          rgba(4, 8, 16, 0.24) 3px
+        ),
+        radial-gradient(
+          circle at 50% 45%,
+          rgba(6, 182, 212, 0.04) 48%,
+          rgba(4, 8, 16, 0.56) 100%
+        );
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .portrait-crt-pulse {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(6, 182, 212, 0.05) 0%,
+          rgba(165, 243, 252, 0.34) 50%,
+          rgba(6, 182, 212, 0.05) 100%
+        );
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0;
+      transform: scale(1);
+      transform-origin: center center;
+      will-change: transform, opacity;
+    }
+
+    #modal-dialogue.open .portrait-crt-stage {
+      animation: portrait-crt-zoom 5.4s ease-in-out infinite;
+    }
+
+    #modal-dialogue.open .portrait-frame {
+      animation: portrait-crt-flicker 3.6s steps(2, end) infinite;
+    }
+
+    #modal-dialogue.open .portrait-crt-wrap::before {
+      animation: portrait-crt-scanbeam 4.2s linear infinite;
+    }
+
+    #modal-dialogue.open .portrait-crt-wrap.crt-pulse .portrait-crt-pulse {
+      animation: portrait-crt-keyword-pulse 190ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes portrait-crt-zoom {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.018); }
+    }
+
+    @keyframes portrait-crt-flicker {
+      0%, 100% { opacity: 0.97; }
+      18% { opacity: 0.92; }
+      32% { opacity: 0.99; }
+      54% { opacity: 0.94; }
+      71% { opacity: 1; }
+      86% { opacity: 0.93; }
+    }
+
+    @keyframes portrait-crt-scanbeam {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -32px, 0);
+      }
+      12% {
+        opacity: 0.85;
+      }
+      85% {
+        opacity: 0.7;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(0, 144px, 0);
+      }
+    }
+
+    @keyframes portrait-crt-keyword-pulse {
+      0% {
+        opacity: 0.88;
+        transform: scale(1.032) translate3d(0, -6px, 0);
+      }
+      55% {
+        opacity: 0.42;
+        transform: scale(1.012) translate3d(0, 3px, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1) translate3d(0, 0, 0);
+      }
     }
 
     .dialogue-text {
@@ -924,12 +1071,192 @@
       #hack-glitch-overlay.active .glitch-rgb-red,
       #hack-glitch-overlay.active .glitch-slice,
       .modal-box.glitch-shake,
-      .hack-combo-mult.pop {
+      .hack-combo-mult.pop,
+      #modal-dialogue.open .portrait-crt-stage,
+      #modal-dialogue.open .portrait-frame,
+      #modal-dialogue.open .portrait-crt-wrap::before,
+      #modal-dialogue.open .portrait-crt-wrap.crt-pulse .portrait-crt-pulse {
         animation: none !important;
+      }
+      #modal-dialogue.open .portrait-crt-stage {
+        transform: none;
+      }
+      #modal-dialogue.open .portrait-frame {
+        opacity: 1;
+      }
+      #modal-dialogue.open .portrait-crt-wrap::before,
+      #modal-dialogue.open .portrait-crt-wrap.crt-pulse .portrait-crt-pulse {
+        opacity: 0;
       }
       #hack-glitch-overlay.active {
         opacity: 0.35;
       }
+    }
+
+    /* === QUEST JOURNAL MODAL === */
+    .journal-box {
+      max-width: 880px;
+    }
+
+    .journal-columns {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .journal-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .journal-col {
+      background: rgba(9, 13, 22, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .journal-col-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .journal-col-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .journal-col-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .journal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .quest-card {
+      background: rgba(15, 23, 38, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 140ms, background 140ms;
+    }
+
+    .quest-card.tracked {
+      border-color: rgba(245, 158, 11, 0.72);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .quest-card.done {
+      border-color: rgba(16, 185, 129, 0.28);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .quest-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quest-kind-main {
+      color: var(--accent-amber);
+    }
+
+    .quest-kind-side {
+      color: var(--accent-cyan);
+    }
+
+    .quest-kind-done {
+      color: var(--accent-emerald);
+    }
+
+    .quest-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .quest-desc {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+    }
+
+    .quest-objective {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #e2e8f0;
+    }
+
+    .quest-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 7px;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .quest-reward {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-cyan);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quest-card.done .quest-reward {
+      color: var(--accent-emerald);
+    }
+
+    .btn-track.active {
+      border-color: var(--accent-amber);
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.16);
+    }
+
+    .journal-empty {
+      padding: 18px 12px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      border: 1px dashed rgba(148, 163, 184, 0.18);
+      border-radius: 5px;
     }
 
     /* === SHOP === */
@@ -979,6 +1306,29 @@
       margin-bottom: 10px;
       font-size: 13px;
       color: var(--text-primary);
+    }
+
+    .settings-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .settings-divider {
+      height: 1px;
+      background: rgba(148, 163, 184, 0.14);
+      margin: 12px 0;
+    }
+
+    .settings-toggle-btn {
+      min-width: 96px;
+      text-align: center;
+    }
+
+    .settings-toggle-btn.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
     }
 
     .settings-val {
@@ -1389,9 +1739,10 @@
 
     <div class="hud-card quest-panel">
       <div class="zone-title" id="hud-zone">Сектор 1 · Провулок «Синтез-7»</div>
-      <div class="quest-text" id="hud-quest">Поговоріть з фіксером Мартою «Проксі» [E]</div>
+      <div class="quest-text clickable" id="hud-quest" title="Відкрити журнал контрактів [Tab]">Поговоріть з фіксером Мартою «Проксі» [E]</div>
       <div class="hud-actions">
         <span class="autosave-indicator" id="hud-autosave"></span>
+        <button class="btn-mini" id="btn-journal-game" style="border-color:rgba(245,158,11,0.5); color:#fbbf24;">Журнал [Tab]</button>
         <button class="btn-mini" id="btn-audio-toggle">Звук: Увімк</button>
         <button class="btn-mini" id="btn-save-game">Зберегти</button>
         <button class="btn-mini" id="btn-settings-game">Налаштування</button>
@@ -1461,6 +1812,7 @@
         <div class="ctrl-row"><span>Швидкі хаки</span><span class="ctrl-key">1 · 2 · 3</span></div>
         <div class="ctrl-row"><span>Термо-зір (ІЧ-режим)</span><span class="ctrl-key">T</span></div>
         <div class="ctrl-row"><span>Міні-карта сектора</span><span class="ctrl-key">M</span></div>
+        <div class="ctrl-row"><span>Журнал контрактів</span><span class="ctrl-key">Tab / N</span></div>
         <div class="ctrl-row"><span>Пауза</span><span class="ctrl-key">Esc</span></div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -1483,7 +1835,12 @@
       </div>
       <div class="modal-body">
         <div class="dialogue-layout">
-          <canvas class="portrait-frame" id="dlg-portrait" width="112" height="128"></canvas>
+          <div class="portrait-crt-wrap" id="dlg-portrait-wrap">
+            <div class="portrait-crt-stage">
+              <canvas class="portrait-frame" id="dlg-portrait" width="112" height="128"></canvas>
+            </div>
+            <div class="portrait-crt-pulse" aria-hidden="true"></div>
+          </div>
           <div class="dialogue-text" id="dlg-text">...</div>
         </div>
         <div class="keywords-wrap">
@@ -1558,6 +1915,37 @@
     </div>
   </div>
 
+  <!-- QUEST JOURNAL MODAL -->
+  <div class="modal-backdrop" id="modal-journal">
+    <div class="modal-box journal-box">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">Журнал контрактів та цілей</h3>
+          <div class="modal-sub" id="journal-sub">Оберіть один активний контракт для навігації на міні-карті</div>
+        </div>
+        <button type="button" class="btn-mini" id="btn-journal-close">Закрити [Esc]</button>
+      </div>
+      <div class="modal-body">
+        <div class="journal-columns">
+          <section class="journal-col" aria-label="Активні завдання">
+            <div class="journal-col-head">
+              <h4 class="journal-col-title">Активні завдання</h4>
+              <span class="journal-col-count" id="journal-active-count">0</span>
+            </div>
+            <div class="journal-list" id="journal-active-list"></div>
+          </section>
+          <section class="journal-col" aria-label="Історія завершених завдань">
+            <div class="journal-col-head">
+              <h4 class="journal-col-title">Історія завершених</h4>
+              <span class="journal-col-count" id="journal-completed-count">0</span>
+            </div>
+            <div class="journal-list" id="journal-completed-list"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- PAUSE / ENDGAME MODAL -->
   <div class="modal-backdrop" id="modal-system">
     <div class="modal-box" style="max-width:480px;">
@@ -1578,6 +1966,14 @@
             <button type="button" class="preset-btn" data-rain="30">Мряка 30%</button>
             <button type="button" class="preset-btn" data-rain="65">Дощ 65%</button>
             <button type="button" class="preset-btn" data-rain="100">Злива 100%</button>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" style="margin-bottom:0;">
+            <div>
+              <div>Звук інтерфейсу (CRT-відгук)</div>
+              <div class="settings-sub">Двотональні сигнали кнопок, вікон і журналу</div>
+            </div>
+            <button type="button" class="btn-mini settings-toggle-btn active" id="btn-ui-audio-toggle">Увімкнено</button>
           </div>
         </div>
         <div id="sys-stats" style="display:none; margin-bottom:18px; font-family:var(--font-mono); font-size:12px; background:rgba(9,13,22,0.7); padding:12px; border-radius:5px; border:1px solid rgba(148,163,184,0.18);"></div>
@@ -1982,7 +2378,7 @@
     const SETTINGS_KEY = "shadowrun_2026_settings_v1";
 
     function loadSettings() {
-      const defaults = { rainIntensity: 0.65, minimapVisible: true };
+      const defaults = { rainIntensity: 0.65, minimapVisible: true, uiAudioEnabled: true };
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) return defaults;
@@ -1990,7 +2386,8 @@
         const rain = Number(parsed?.rainIntensity);
         return {
           rainIntensity: Number.isFinite(rain) ? Math.max(0, Math.min(1, rain)) : 0.65,
-          minimapVisible: parsed?.minimapVisible !== false
+          minimapVisible: parsed?.minimapVisible !== false,
+          uiAudioEnabled: parsed?.uiAudioEnabled !== false
         };
       } catch {
         return defaults;
@@ -2017,12 +2414,18 @@
           localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         } catch {}
         bus.emit("settings:minimapChanged", { value: settings.minimapVisible });
+      } else if (key === "uiAudioEnabled") {
+        settings.uiAudioEnabled = Boolean(value);
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch {}
+        bus.emit("settings:uiAudioChanged", { value: settings.uiAudioEnabled, silent });
       }
     }
 
     function createInitialState() {
       return {
-        mode: "TITLE", // TITLE | PLAYING | DIALOGUE | HACKING | SHOP | PAUSED | GAMEOVER | VICTORY | EDITOR
+        mode: "TITLE", // TITLE | PLAYING | DIALOGUE | HACKING | SHOP | JOURNAL | PAUSED | GAMEOVER | VICTORY | EDITOR
         zoneId: "alley",
         time: 0,
         hitStop: 0,
@@ -2031,6 +2434,8 @@
         overclockTimer: 0,
         thermalActive: false,
         playtestMode: false,
+        trackedQuestId: "main_chimera",
+        questCompletedAt: {},
         questText: "Поговоріть з фіксером Мартою «Проксі» [E] або очистіть провулок.",
         unlockedKeywords: ["contract", "doc_shop", "cyberware_2026", "cache_help"],
         askedKeywords: [],
@@ -2144,6 +2549,8 @@
         const savedAt = Date.now();
         const snapshot = {
           zoneId: state.zoneId,
+          trackedQuestId: state.trackedQuestId,
+          questCompletedAt: state.questCompletedAt,
           questText: state.questText,
           unlockedKeywords: state.unlockedKeywords,
           askedKeywords: state.askedKeywords,
@@ -2199,6 +2606,8 @@
         const snap = JSON.parse(raw);
         state = createInitialState();
         state.zoneId = snap.zoneId || "alley";
+        state.trackedQuestId = typeof snap.trackedQuestId === "string" && snap.trackedQuestId ? snap.trackedQuestId : "main_chimera";
+        state.questCompletedAt = snap.questCompletedAt && typeof snap.questCompletedAt === "object" ? { ...snap.questCompletedAt } : {};
         state.questText = snap.questText || state.questText;
         state.unlockedKeywords = Array.isArray(snap.unlockedKeywords) ? snap.unlockedKeywords : state.unlockedKeywords;
         state.askedKeywords = Array.isArray(snap.askedKeywords) ? snap.askedKeywords : [];
@@ -2348,7 +2757,9 @@
 
     window.addEventListener("keydown", (e) => {
       const code = normalizeCode(e);
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code)) {
+      const tag = document.activeElement?.tagName;
+      const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code) || (code === "Tab" && !inField)) {
         e.preventDefault();
       }
       if (!down.has(code)) justPressed.add(code);
@@ -2413,13 +2824,15 @@
 
   /* ============================================================================
    * MODULE 05: AUDIO_SYNTH
-   * Dependencies: EVENT_BUS
-   * Exports: createAudioSynth({ bus })
-   * Seam note: Pure Web Audio procedural synth subscribed to EventBus
+   * Dependencies: EVENT_BUS, STATE_STORE
+   * Exports: createAudioSynth({ bus, store })
+   * Seam note: Pure Web Audio procedural synth + 90s CRT terminal UI feedback
    * ========================================================================== */
-  function createAudioSynth({ bus }) {
+  function createAudioSynth({ bus, store }) {
     let ctx = null;
     let enabled = true;
+    let lastSpecializedUiAt = 0;
+    let lastGenericUiAt = 0;
 
     function ensureCtx() {
       if (!enabled) return null;
@@ -2429,6 +2842,11 @@
       }
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
       return ctx;
+    }
+
+    function isUiEnabled() {
+      if (!enabled) return false;
+      return store ? store.getSetting("uiAudioEnabled") !== false : true;
     }
 
     function tone({ freq = 220, endFreq = 80, dur = 0.1, type = "triangle", vol = 0.12 }) {
@@ -2446,6 +2864,79 @@
       gain.connect(c.destination);
       osc.start(now);
       osc.stop(now + dur + 0.01);
+    }
+
+    function crtNote({ freq = 520, endFreq = null, delay = 0, dur = 0.045, type = "sine", vol = 0.055, lpfFreq = 2800 }) {
+      const c = ensureCtx();
+      if (!c) return;
+      const start = c.currentTime + Math.max(0, delay);
+      const stopAt = start + dur + 0.015;
+      const osc = c.createOscillator();
+      const lpf = c.createBiquadFilter();
+      const gain = c.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      if (endFreq != null && endFreq !== freq) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(40, endFreq), start + dur);
+      }
+
+      lpf.type = "lowpass";
+      lpf.frequency.setValueAtTime(lpfFreq, start);
+      lpf.Q.setValueAtTime(0.7, start);
+
+      const attack = Math.min(0.006, dur * 0.25);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(vol, start + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0008, start + dur);
+
+      osc.connect(lpf);
+      lpf.connect(gain);
+      gain.connect(c.destination);
+      osc.start(start);
+      osc.stop(stopAt);
+    }
+
+    function playUiFeedback(kind = "click", payload = {}) {
+      if (!isUiEnabled()) return;
+      const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+      if (kind === "click") {
+        if (nowMs - lastSpecializedUiAt < 45 || nowMs - lastGenericUiAt < 25) return;
+        lastGenericUiAt = nowMs;
+      } else {
+        lastSpecializedUiAt = nowMs;
+      }
+
+      if (kind === "open") {
+        crtNote({ freq: 440, delay: 0, dur: 0.05, type: "triangle", vol: 0.055, lpfFreq: 2600 });
+        crtNote({ freq: 660, delay: 0.038, dur: 0.075, type: "sine", vol: 0.06, lpfFreq: 2900 });
+      } else if (kind === "close") {
+        crtNote({ freq: 620, delay: 0, dur: 0.042, type: "triangle", vol: 0.048, lpfFreq: 2500 });
+        crtNote({ freq: 415, delay: 0.032, dur: 0.068, type: "sine", vol: 0.05, lpfFreq: 2200 });
+      } else if (kind === "journalOpen") {
+        crtNote({ freq: 392, delay: 0, dur: 0.045, type: "triangle", vol: 0.052, lpfFreq: 2500 });
+        crtNote({ freq: 587.33, delay: 0.034, dur: 0.055, type: "sine", vol: 0.056, lpfFreq: 2700 });
+        crtNote({ freq: 783.99, delay: 0.068, dur: 0.08, type: "sine", vol: 0.05, lpfFreq: 2900 });
+      } else if (kind === "journalClose") {
+        crtNote({ freq: 587.33, delay: 0, dur: 0.04, type: "triangle", vol: 0.046, lpfFreq: 2500 });
+        crtNote({ freq: 392, delay: 0.032, dur: 0.07, type: "sine", vol: 0.048, lpfFreq: 2200 });
+      } else if (kind === "questSelect") {
+        crtNote({ freq: 523.25, delay: 0, dur: 0.046, type: "triangle", vol: 0.055, lpfFreq: 2800 });
+        crtNote({ freq: 783.99, delay: 0, dur: 0.046, type: "sine", vol: 0.035, lpfFreq: 2800 });
+        crtNote({ freq: 1046.5, delay: 0.042, dur: 0.095, type: "sine", vol: 0.062, lpfFreq: 3100 });
+      } else if (kind === "toggle") {
+        if (payload?.active === false) {
+          crtNote({ freq: 540, delay: 0, dur: 0.035, type: "triangle", vol: 0.046, lpfFreq: 2400 });
+          crtNote({ freq: 360, delay: 0.028, dur: 0.055, type: "sine", vol: 0.048, lpfFreq: 2100 });
+        } else {
+          crtNote({ freq: 480, delay: 0, dur: 0.035, type: "triangle", vol: 0.048, lpfFreq: 2600 });
+          crtNote({ freq: 720, delay: 0.028, dur: 0.058, type: "sine", vol: 0.052, lpfFreq: 2900 });
+        }
+      } else {
+        // Default "click": soft two-tone 90s CRT terminal micro-chirp
+        crtNote({ freq: 520, delay: 0, dur: 0.028, type: "sine", vol: 0.046, lpfFreq: 2600 });
+        crtNote({ freq: 780, delay: 0.018, dur: 0.038, type: "triangle", vol: 0.038, lpfFreq: 2700 });
+      }
     }
 
     bus.on("combat:hit", (p) => {
@@ -2478,9 +2969,12 @@
     });
     bus.on("hack:comboBreak", () => tone({ freq: 210, endFreq: 85, dur: 0.15, type: "square", vol: 0.1 }));
     bus.on("pickup:reward", () => tone({ freq: 580, endFreq: 880, dur: 0.12, type: "triangle", vol: 0.09 }));
+    bus.on("ui:feedback", (payload) => playUiFeedback(payload?.kind || "click", payload));
 
     return {
       isEnabled() { return enabled; },
+      isUiEnabled,
+      playUiFeedback,
       toggle() {
         enabled = !enabled;
         if (enabled) ensureCtx();
@@ -2998,6 +3492,7 @@
       getCurrentZone() { return ZONES[store.get().zoneId] || ZONES[Object.keys(ZONES)[0]]; },
       getZoneIds() { return Object.keys(ZONES); },
       getWorldMeta() { return worldMeta; },
+      getWorldExtensions() { return worldExtensions; },
       setStartPoint(zoneId, x, y) {
         if (!ZONES[zoneId]) return;
         worldMeta = { startZone: zoneId, startX: x, startY: y };
@@ -3822,6 +4317,7 @@
       subEl.textContent = "Виберіть підсвічені токени у правильному порядку";
       renderDOM(false);
       modal.classList.add("open");
+      bus.emit("ui:feedback", { kind: "open" });
     }
 
     function isCellEligible(cell) {
@@ -3950,6 +4446,7 @@
       modal.classList.remove("open");
       session = null;
       store.get().mode = "PLAYING";
+      bus.emit("ui:feedback", { kind: "close" });
     }
 
     function update(dt) {
@@ -4039,6 +4536,7 @@
     const dlgRole = document.getElementById("dlg-npc-role");
     const dlgText = document.getElementById("dlg-text");
     const dlgKeywords = document.getElementById("dlg-keywords");
+    const portraitWrap = document.getElementById("dlg-portrait-wrap");
     const portraitCanvas = document.getElementById("dlg-portrait");
 
     const shopModal = document.getElementById("modal-shop");
@@ -4046,11 +4544,31 @@
     const shopWallet = document.getElementById("shop-wallet");
 
     let activeNpcId = null;
+    let portraitPulseTimer = null;
 
     document.getElementById("btn-dlg-close").addEventListener("click", closeDialogue);
     document.getElementById("btn-shop-close").addEventListener("click", closeShop);
     bus.on("dialogue:close", closeDialogue);
     bus.on("shop:open", openShop);
+
+    function clearPortraitPulse() {
+      if (portraitPulseTimer) {
+        clearTimeout(portraitPulseTimer);
+        portraitPulseTimer = null;
+      }
+      if (portraitWrap) portraitWrap.classList.remove("crt-pulse");
+    }
+
+    function triggerPortraitPulse() {
+      if (!portraitWrap) return;
+      clearPortraitPulse();
+      void portraitWrap.offsetWidth;
+      portraitWrap.classList.add("crt-pulse");
+      portraitPulseTimer = setTimeout(() => {
+        portraitWrap.classList.remove("crt-pulse");
+        portraitPulseTimer = null;
+      }, 190);
+    }
 
     function drawPortrait(color, accent) {
       const ctx = portraitCanvas.getContext("2d");
@@ -4081,12 +4599,14 @@
       const st = store.get();
       st.mode = "DIALOGUE";
       activeNpcId = npcId;
+      clearPortraitPulse();
       dlgName.textContent = npc.name;
       dlgRole.textContent = npc.role;
       dlgText.textContent = npc.greeting;
       drawPortrait(npc.portraitColor, npc.portraitAccent);
       renderKeywords(npc);
       dlgModal.classList.add("open");
+      bus.emit("ui:feedback", { kind: "open" });
     }
 
     function renderKeywords(npc) {
@@ -4105,6 +4625,7 @@
             if (!st.unlockedKeywords.includes(u)) st.unlockedKeywords.push(u);
           }
           if (kw.onSelect) kw.onSelect(st, bus);
+          triggerPortraitPulse();
           bus.emit("pickup:reward");
           bus.emit("dialogue:choice", kw.id);
           renderKeywords(npc);
@@ -4116,8 +4637,10 @@
     function closeDialogue() {
       if (!activeNpcId) return;
       activeNpcId = null;
+      clearPortraitPulse();
       dlgModal.classList.remove("open");
       if (store.get().mode === "DIALOGUE") store.get().mode = "PLAYING";
+      bus.emit("ui:feedback", { kind: "close" });
     }
 
     function openShop() {
@@ -4125,6 +4648,7 @@
       st.mode = "SHOP";
       renderShop();
       shopModal.classList.add("open");
+      bus.emit("ui:feedback", { kind: "open" });
     }
 
     function renderShop() {
@@ -4165,8 +4689,10 @@
     }
 
     function closeShop() {
+      const wasOpen = shopModal.classList.contains("open");
       shopModal.classList.remove("open");
       if (store.get().mode === "SHOP") store.get().mode = "PLAYING";
+      if (wasOpen) bus.emit("ui:feedback", { kind: "close" });
     }
 
     return { openDialogue, closeDialogue, openShop, closeShop };
@@ -5572,7 +6098,7 @@
    * Exports: createMinimapHud({ store, world })
    * Seam note: Tactical corner minimap with exploration persistence & M toggle
    * ========================================================================== */
-  function createMinimapHud({ store, world }) {
+  function createMinimapHud({ store, world, questJournal }) {
     const panelEl = document.getElementById("minimap-panel");
     const toggleBtn = document.getElementById("minimap-toggle");
     const zoneTagEl = document.getElementById("minimap-zone-tag");
@@ -5655,77 +6181,26 @@
     }
 
     function resolveQuestTargets(st, z) {
+      if (questJournal && typeof questJournal.getTrackedTargets === "function") {
+        const journalTargets = questJournal.getTrackedTargets(z);
+        if (Array.isArray(journalTargets) && journalTargets.length > 0) {
+          return journalTargets;
+        }
+      }
+
       const targets = [];
       const addTarget = (x, y, color = "#f59e0b", label = "ЦІЛЬ") => {
         targets.push({ x, y, color, label });
       };
 
-      const hasCampaignZones = Boolean(world.ZONES.alley && world.ZONES.transit && world.ZONES.vault);
-      if (!st.playtestMode && hasCampaignZones) {
-        if (!st.flags.gotContract) {
-          if (z.id === "alley") {
-            const marta = z.npcs.find((n) => n.id === "marta");
-            if (marta) addTarget(marta.x, marta.y, "#f59e0b", "МАРТА");
-          } else {
-            const pBack = z.terminals.find((t) => t.type === "PORTAL");
-            if (pBack) addTarget(pBack.x, pBack.y, "#f59e0b", "ШЛЮЗ");
-          }
-        } else if (!st.flags.hasSectorKey && !st.flags.transitGateOpen) {
-          if (z.id === "alley") {
-            const enemies = st.entities.filter((e) => e.zone === "alley" && e.team === "enemy" && e.hp > 0);
-            if (enemies.length > 0) {
-              enemies.forEach((e) => addTarget(e.x, e.y, "#f59e0b", "ЦІЛЬ"));
-            } else {
-              const cache = z.npcs.find((n) => n.id === "cache");
-              if (cache) addTarget(cache.x, cache.y, "#22d3ee", "КЕШ");
-              const portal = z.terminals.find((t) => t.id === "gate_alley_transit" || t.targetZone === "transit");
-              if (portal) addTarget(portal.x, portal.y, "#fbbf24", "СЕКТОР 2");
-            }
-          } else {
-            const pBack = z.terminals.find((t) => t.type === "PORTAL");
-            if (pBack) addTarget(pBack.x, pBack.y, "#f59e0b", "ШЛЮЗ");
-          }
-        } else if (!st.flags.vaultGateOpen) {
-          if (z.id === "alley") {
-            const portal = z.terminals.find((t) => t.targetZone === "transit");
-            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СЕКТОР 2");
-          } else if (z.id === "transit") {
-            const gate = z.terminals.find((t) => t.type === "HACK_GATE" && !store.isTerminalUsed(t.id));
-            if (gate) addTarget(gate.x, gate.y, "#22d3ee", "ЗЛАМ");
-          }
-        } else if (!st.flags.bossDefeated) {
-          if (z.id === "alley") {
-            const portal = z.terminals.find((t) => t.targetZone === "transit");
-            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СЕКТОР 2");
-          } else if (z.id === "transit") {
-            const portal = z.terminals.find((t) => t.targetZone === "vault");
-            if (portal) addTarget(portal.x, portal.y, "#f59e0b", "СХОВИЩЕ");
-          } else if (z.id === "vault") {
-            const boss = st.entities.find((e) => e.zone === "vault" && e.kind === "boss" && e.hp > 0);
-            if (boss) addTarget(boss.x, boss.y, "#ef4444", "БОС");
-          }
-        } else if (!st.flags.extracted) {
-          if (z.id === "vault") {
-            const ext = z.terminals.find((t) => t.type === "EXTRACT");
-            if (ext) addTarget(ext.x, ext.y, "#10b981", "ЯДРО");
-          } else {
-            const target = z.id === "alley" ? "transit" : "vault";
-            const portal = z.terminals.find((t) => t.targetZone === target);
-            if (portal) addTarget(portal.x, portal.y, "#10b981", "ДО ЯДРА");
-          }
-        }
-      }
-
-      // Custom / Playtest zone fallback markers when no built-in quest target matched
-      if (targets.length === 0) {
-        for (const t of z.terminals) {
-          if (store.isTerminalUsed(t.id)) continue;
-          if (t.type === "EXTRACT") addTarget(t.x, t.y, "#10b981", "ФІНІШ");
-          else if (t.type === "HACK_GATE" || t.type === "HACK_CRYPTO" || t.type === "HACK_TURRETS") {
-            addTarget(t.x, t.y, "#22d3ee", "ЗЛАМ");
-          } else if (t.type === "PORTAL") {
-            addTarget(t.x, t.y, "#f59e0b", "ШЛЮЗ");
-          }
+      // Custom / Playtest zone fallback markers when no tracked quest target matched
+      for (const t of z.terminals) {
+        if (store.isTerminalUsed(t.id)) continue;
+        if (t.type === "EXTRACT") addTarget(t.x, t.y, "#10b981", "ФІНІШ");
+        else if (t.type === "HACK_GATE" || t.type === "HACK_CRYPTO" || t.type === "HACK_TURRETS") {
+          addTarget(t.x, t.y, "#22d3ee", "ЗЛАМ");
+        } else if (t.type === "PORTAL") {
+          addTarget(t.x, t.y, "#f59e0b", "ШЛЮЗ");
         }
       }
 
@@ -5908,8 +6383,572 @@
   }
 
   /* ============================================================================
+   * MODULE 11E: QUEST_JOURNAL
+   * Dependencies: STATE_STORE, WORLD_MAP, EVENT_BUS
+   * Exports: createQuestJournal({ store, world, bus })
+   * Seam note: Quest registry, completion history, active tracker & minimap targets
+   * ========================================================================== */
+  function createQuestJournal({ store, world, bus }) {
+    const modal = document.getElementById("modal-journal");
+    const subEl = document.getElementById("journal-sub");
+    const activeListEl = document.getElementById("journal-active-list");
+    const completedListEl = document.getElementById("journal-completed-list");
+    const activeCountEl = document.getElementById("journal-active-count");
+    const completedCountEl = document.getElementById("journal-completed-count");
+    const closeBtn = document.getElementById("btn-journal-close");
+
+    let completionSeq = 1;
+
+    function shortZoneName(zoneId) {
+      const z = world.ZONES[zoneId];
+      if (!z) return zoneId || "Сектор";
+      return z.title.includes("·") ? z.title.split("·")[1].trim() : z.title;
+    }
+
+    function countZoneAliveEnemies(st, zoneId) {
+      const z = world.ZONES[zoneId];
+      if (!z) return [];
+      const live = st.entities.filter((e) => e.zone === zoneId && e.team === "enemy");
+      if (live.length > 0 || st.zoneId === zoneId) {
+        return live.filter((e) => e.hp > 0).map((e) => ({ x: e.x, y: e.y, kind: e.kind }));
+      }
+      const out = [];
+      (z.spawns || []).forEach((sp, idx) => {
+        const uid = `${zoneId}_en_${idx}`;
+        if (!store.isEntityDestroyed(uid)) {
+          out.push({ x: sp.x, y: sp.y, kind: sp.kind });
+        }
+      });
+      return out;
+    }
+
+    function findPortalPathStep(fromZoneId, toZoneId) {
+      if (!fromZoneId || !toZoneId || fromZoneId === toZoneId) return null;
+      const visited = new Set([fromZoneId]);
+      const queue = [{ zid: fromZoneId, firstPortal: null }];
+      while (queue.length > 0) {
+        const { zid, firstPortal } = queue.shift();
+        const z = world.ZONES[zid];
+        if (!z) continue;
+        for (const t of z.terminals || []) {
+          if (t.type !== "PORTAL" || !t.targetZone || !world.ZONES[t.targetZone]) continue;
+          const stepPortal = firstPortal || t;
+          if (t.targetZone === toZoneId) return stepPortal;
+          if (!visited.has(t.targetZone)) {
+            visited.add(t.targetZone);
+            queue.push({ zid: t.targetZone, firstPortal: stepPortal });
+          }
+        }
+      }
+      return null;
+    }
+
+    function evaluateQuests() {
+      const st = store.get();
+      const quests = [];
+      const hasCampaignZones = Boolean(world.ZONES.alley && world.ZONES.transit && world.ZONES.vault);
+
+      if (!st.playtestMode && hasCampaignZones) {
+        // 1. Main Storyline Contract
+        const alleyEnemies = countZoneAliveEnemies(st, "alley");
+        const bossEntities = countZoneAliveEnemies(st, "vault").filter((e) => e.kind === "boss");
+        let mainZoneId = "alley";
+        let mainProgress = "Крок 1/5";
+        let mainObjective = "Поговоріть з фіксером Мартою «Проксі» [E] у Провулку «Синтез-7».";
+        let mainHud = "Поговоріть з фіксером Мартою «Проксі» [E]";
+        let mainDesc = "Отримайте контракт проти Kuroda-Bio та стартовий аванс 100 ₵ у Марти «Проксі».";
+        let mainColor = "#f59e0b";
+        let mainTargets = [];
+
+        if (st.flags.extracted) {
+          mainZoneId = "vault";
+          mainProgress = "5/5";
+          mainObjective = "Ваги моделі «Хімера» успішно вилучено з дата-сховища Kuroda-Bio.";
+          mainHud = "Контракт «Хімера» виконано!";
+          mainDesc = mainObjective;
+        } else if (!st.flags.gotContract) {
+          const marta = world.ZONES.alley.npcs.find((n) => n.id === "marta");
+          if (marta) mainTargets = [{ x: marta.x, y: marta.y, color: "#f59e0b", label: "МАРТА" }];
+        } else if (!st.flags.hasSectorKey && !st.flags.transitGateOpen) {
+          mainZoneId = "alley";
+          mainProgress = "Крок 2/5";
+          if (alleyEnemies.length > 0) {
+            mainObjective = `Зачистіть провулок (${alleyEnemies.length} ворогів) або отримайте ключ доступу від Кеша [E].`;
+            mainHud = "Перейдіть на схід до провулку або поговоріть з Кешем [E].";
+            mainTargets = alleyEnemies.map((e) => ({ x: e.x, y: e.y, color: "#f59e0b", label: "ЦІЛЬ" }));
+          } else {
+            mainObjective = "Провулок зачищено — поговоріть з Кешем [E] або проходьте крізь Східний Шлюз [E].";
+            mainHud = "Поговоріть з Кешем [E] або йдіть до Шлюзу в Сектор 2.";
+            const cache = world.ZONES.alley.npcs.find((n) => n.id === "cache");
+            const portal = world.ZONES.alley.terminals.find((t) => t.id === "gate_alley_transit" || t.targetZone === "transit");
+            if (cache && !st.flags.cacheRewarded) mainTargets.push({ x: cache.x, y: cache.y, color: "#22d3ee", label: "КЕШ" });
+            if (portal) mainTargets.push({ x: portal.x, y: portal.y, color: "#fbbf24", label: "СЕКТОР 2" });
+          }
+          mainDesc = "Подолайте біометричний шлюз у Сектор 2 «Транзит-Мережа» через зачистку вулиці чи допомогу Кеша.";
+        } else if (!st.flags.vaultGateOpen) {
+          mainZoneId = "transit";
+          mainProgress = "Крок 3/5";
+          mainObjective = "Увійдіть у Сектор 2 та зламайте термінал замка Сховища [E].";
+          mainHud = "Зламайте термінал замка Сховища Kuroda [E].";
+          mainDesc = "Проникніть до хабу «Транзит-Мережа» та відкрийте Zero-Trust ворота у Дата-Сховище.";
+          mainColor = "#22d3ee";
+          const gate = world.ZONES.transit.terminals.find((t) => t.type === "HACK_GATE" && !store.isTerminalUsed(t.id));
+          if (gate) mainTargets = [{ x: gate.x, y: gate.y, color: "#22d3ee", label: "ЗЛАМ" }];
+        } else if (!st.flags.bossDefeated) {
+          mainZoneId = "vault";
+          mainProgress = "Крок 4/5";
+          mainObjective = "Прорвіться у Сектор 3 та нейтралізуйте екзо-стража «АГЕНТ-09».";
+          mainHud = "Переможіть АГЕНТА-09 у Дата-Сховищі!";
+          mainDesc = "Використовуйте важкі пробої [K] та Sub-GHz EMP [3], щоб пробити регенеруючий щит боса.";
+          mainColor = "#ef4444";
+          mainTargets = bossEntities.map((b) => ({ x: b.x, y: b.y, color: "#ef4444", label: "БОС" }));
+        } else {
+          mainZoneId = "vault";
+          mainProgress = "Крок 5/5";
+          mainObjective = "АГЕНТ-09 знищений! Завантажте ядро «Хімера» на платформі праворуч [E].";
+          mainHud = "Завантажте ядро «Хімера» праворуч [E]!";
+          mainDesc = "Завершіть евакуацію ваг моделі «Хімера» з центрального термінала Сховища.";
+          mainColor = "#10b981";
+          const ext = world.ZONES.vault.terminals.find((t) => t.type === "EXTRACT");
+          if (ext) mainTargets = [{ x: ext.x, y: ext.y, color: "#10b981", label: "ЯДРО" }];
+        }
+
+        quests.push({
+          id: "main_chimera",
+          kind: "ГОЛОВНИЙ КОНТРАКТ",
+          kindType: "main",
+          title: "Проєкт «Хімера»",
+          desc: mainDesc,
+          objective: mainObjective,
+          hudText: mainHud,
+          reward: "800 ₵ · +6 Карма",
+          progress: mainProgress,
+          zoneId: mainZoneId,
+          zoneTitle: shortZoneName(mainZoneId),
+          accent: mainColor,
+          completed: Boolean(st.flags.extracted),
+          targetsInHomeZone: mainTargets
+        });
+
+        // 2. Side Quest: Alley Sweep & Cache Data-Key
+        const alleyDone = Boolean(st.flags.cacheRewarded || st.flags.hasSectorKey);
+        const totalAlley = Math.max(1, (world.ZONES.alley.spawns || []).length);
+        const clearedAlley = Math.max(0, totalAlley - alleyEnemies.length);
+        let sweepTargets = [];
+        if (!alleyDone) {
+          if (alleyEnemies.length > 0) {
+            sweepTargets = alleyEnemies.map((e) => ({ x: e.x, y: e.y, color: "#22d3ee", label: "РЕЙДЕР" }));
+          } else {
+            const cache = world.ZONES.alley.npcs.find((n) => n.id === "cache");
+            if (cache) sweepTargets = [{ x: cache.x, y: cache.y, color: "#22d3ee", label: "КЕШ" }];
+          }
+        }
+        quests.push({
+          id: "side_alley_sweep",
+          kind: "ПОБІЧНИЙ КОНТРАКТ",
+          kindType: "side",
+          title: "Зачистка провулку «Синтез-7»",
+          desc: "Хакер Кеш переховується біля східного проходу. Приберіть гіг-рейдерів і заберіть зламаний Data-Key.",
+          objective: alleyDone
+            ? "Охорону провулку нейтралізовано, Data-Key отримано від Кеша."
+            : alleyEnemies.length > 0
+              ? `Нейтралізуйте ворогів у Провулку (залишилось: ${alleyEnemies.length}), потім зверніться до Кеша [E].`
+              : "Усі рейдери в провулку знешкоджені! Поговоріть з Кешем [E] для нагороди.",
+          hudText: alleyEnemies.length > 0
+            ? `Зачистка провулку: залишилось ${alleyEnemies.length} ворогів`
+            : "Поговоріть з Кешем [E] та отримайте Data-Key",
+          reward: "+180 ₵ · +2 Карма · Data-Key",
+          progress: alleyDone ? `${totalAlley}/${totalAlley}` : `${clearedAlley}/${totalAlley}`,
+          zoneId: "alley",
+          zoneTitle: shortZoneName("alley"),
+          accent: "#22d3ee",
+          completed: alleyDone,
+          targetsInHomeZone: sweepTargets
+        });
+
+        // 3. Side Quest: Crypto Node in Transit
+        const cryptoTerm = world.ZONES.transit.terminals.find((t) => t.id === "hack_crypto_transit" || t.type === "HACK_CRYPTO");
+        const cryptoDone = cryptoTerm ? store.isTerminalUsed(cryptoTerm.id) : false;
+        quests.push({
+          id: "side_crypto_transit",
+          kind: "ПОБІЧНИЙ КОНТРАКТ",
+          kindType: "side",
+          title: "Злам крипто-вузла «Транзит»",
+          desc: "У північно-західному секторі підстанції «Транзит-Мережа» працює резервний крипто-сервер Kuroda.",
+          objective: cryptoDone
+            ? "Крипто-вузол Kuroda успішно зламано, кошти виведено."
+            : "Знайдіть і зламайте крипто-вузол (+160 ₵) у Секторі 2 [E].",
+          hudText: "Зламайте крипто-вузол Kuroda у Секторі 2 [E]",
+          reward: "+160 ₵ · +2 Карма",
+          progress: cryptoDone ? "1/1" : "0/1",
+          zoneId: "transit",
+          zoneTitle: shortZoneName("transit"),
+          accent: "#22d3ee",
+          completed: cryptoDone,
+          targetsInHomeZone: !cryptoDone && cryptoTerm ? [{ x: cryptoTerm.x, y: cryptoTerm.y, color: "#22d3ee", label: "КРИПТО" }] : []
+        });
+
+        // 4. Side Quest: Vault 6G Turrets Intercept
+        const turretTerm = world.ZONES.vault.terminals.find((t) => t.id === "hack_vault_turrets" || t.type === "HACK_TURRETS");
+        const turretsDone = Boolean(st.flags.vaultTurretsHacked || (turretTerm && store.isTerminalUsed(turretTerm.id)));
+        quests.push({
+          id: "side_vault_turrets",
+          kind: "ПОБІЧНИЙ КОНТРАКТ",
+          kindType: "side",
+          title: "Перехоплення турелей залу",
+          desc: "Північний термінал керування турелями 6G дозволяє обернути стаціонарну оборону Сховища проти АГЕНТА-09.",
+          objective: turretsDone
+            ? "Автоматичні турелі 6G перепрошиті на підтримку раннера."
+            : "Зламайте консоль перехоплення турелей у північному крилі Сектора 3 [E].",
+          hudText: "Перехопіть термінал турелей 6G у Секторі 3 [E]",
+          reward: "+2 Карма · Союзні турелі",
+          progress: turretsDone ? "1/1" : "0/1",
+          zoneId: "vault",
+          zoneTitle: shortZoneName("vault"),
+          accent: "#22d3ee",
+          completed: turretsDone,
+          targetsInHomeZone: !turretsDone && turretTerm ? [{ x: turretTerm.x, y: turretTerm.y, color: "#22d3ee", label: "ТУРЕЛІ" }] : []
+        });
+      }
+
+      // 5. Hidden Stashes Quest (works dynamically across campaign AND custom zones)
+      const allStashes = [];
+      for (const [zid, z] of Object.entries(world.ZONES)) {
+        for (const t of z.terminals || []) {
+          if (t.type === "STASH") {
+            allStashes.push({ zoneId: zid, term: t });
+          }
+        }
+      }
+      if (allStashes.length > 0 && !st.playtestMode) {
+        const opened = allStashes.filter((s) => store.isTerminalUsed(s.term.id));
+        const remaining = allStashes.filter((s) => !store.isTerminalUsed(s.term.id));
+        const stashesDone = remaining.length === 0;
+        const nextStash = remaining.find((s) => s.zoneId === st.zoneId) || remaining[0] || allStashes[0];
+        const totalCred = allStashes.reduce((acc, s) => acc + (s.term.rewardCredits || 80), 0);
+        const totalAmmo = allStashes.reduce((acc, s) => acc + (s.term.rewardAmmo || 4), 0);
+        const totalKarma = allStashes.reduce((acc, s) => acc + (s.term.rewardKarma || 1), 0);
+        const targetZoneId = nextStash.zoneId;
+        const sameZoneRemaining = remaining.filter((s) => s.zoneId === targetZoneId);
+
+        quests.push({
+          id: "side_hidden_stashes",
+          kind: "СХОВАНКИ",
+          kindType: "side",
+          title: "Мисливець за тайниками",
+          desc: "Корпоративні кур'єри ховають ІЧ-тайники в темних закутках секторів. Використовуйте Термо-зір [T] рівня 2+ для їх підсвітки.",
+          objective: stashesDone
+            ? `Усі приховані схованки знайдено та відкрито (${opened.length}/${allStashes.length}).`
+            : `Відкрито схованок: ${opened.length}/${allStashes.length}. Наступний тайник — у зоні «${shortZoneName(targetZoneId)}» [E].`,
+          hudText: `Тайники (${opened.length}/${allStashes.length}) · Сектор: ${shortZoneName(targetZoneId)}`,
+          reward: `+${totalCred} ₵ · +${totalAmmo} наб. · +${totalKarma} Карма`,
+          progress: `${opened.length}/${allStashes.length}`,
+          zoneId: targetZoneId,
+          zoneTitle: shortZoneName(targetZoneId),
+          accent: "#22d3ee",
+          completed: stashesDone,
+          targetsInHomeZone: stashesDone
+            ? []
+            : sameZoneRemaining.map((s) => ({ x: s.term.x, y: s.term.y, color: "#22d3ee", label: "ТАЙНИК" }))
+        });
+      }
+
+      // 6. Custom / Sandbox world extensions or Playtest sector objectives
+      const extQuests = world.getWorldExtensions?.()?.quests;
+      if (extQuests && typeof extQuests === "object") {
+        const list = Array.isArray(extQuests) ? extQuests : Object.values(extQuests);
+        for (const cq of list) {
+          if (!cq || !cq.id) continue;
+          const zid = world.ZONES[cq.zoneId] ? cq.zoneId : st.zoneId;
+          const z = world.ZONES[zid];
+          const term = cq.terminalId && z ? (z.terminals || []).find((t) => t.id === cq.terminalId) : null;
+          const done = Boolean(
+            (cq.flag && st.flags[cq.flag]) ||
+            (cq.terminalId && store.isTerminalUsed(cq.terminalId))
+          );
+          quests.push({
+            id: String(cq.id),
+            kind: "КАСТОМНИЙ КОНТРАКТ",
+            kindType: "side",
+            title: String(cq.title || cq.id),
+            desc: String(cq.desc || "Додатковий контракт кастомного світу."),
+            objective: String(cq.objective || cq.desc || "Виконайте умову сектора."),
+            hudText: String(cq.hudText || cq.title || cq.id),
+            reward: String(cq.reward || "Нагорода сектора"),
+            progress: done ? "1/1" : "0/1",
+            zoneId: zid,
+            zoneTitle: shortZoneName(zid),
+            accent: "#22d3ee",
+            completed: done,
+            targetsInHomeZone: !done && term ? [{ x: term.x, y: term.y, color: "#22d3ee", label: "ЦІЛЬ" }] : []
+          });
+        }
+      }
+
+      // Fallback objectives for Sandbox Playtest or fully custom worlds without built-in campaign
+      if (quests.length === 0) {
+        const curZ = world.getCurrentZone();
+        if (curZ) {
+          const objectiveTerms = (curZ.terminals || []).filter((t) => t.type !== "PORTAL" && t.type !== "VENDING");
+          for (const term of objectiveTerms) {
+            const done = store.isTerminalUsed(term.id);
+            quests.push({
+              id: `sector_${curZ.id}_${term.id}`,
+              kind: "КОНТРАКТ СЕКТОРА",
+              kindType: term.type === "EXTRACT" ? "main" : "side",
+              title: term.label.replace(/\s*\[E\]/g, ""),
+              desc: `Ціль у секторі «${curZ.title}».`,
+              objective: done ? "Термінал активовано." : `Взаємодійте з об'єктом «${term.label}».`,
+              hudText: `${term.label}`,
+              reward: term.type === "STASH" ? `+${term.rewardCredits || 80} ₵` : "Прогрес сектора",
+              progress: done ? "1/1" : "0/1",
+              zoneId: curZ.id,
+              zoneTitle: shortZoneName(curZ.id),
+              accent: term.type === "EXTRACT" ? "#10b981" : "#22d3ee",
+              completed: done,
+              targetsInHomeZone: done ? [] : [{ x: term.x, y: term.y, color: term.type === "EXTRACT" ? "#10b981" : "#22d3ee", label: "ЦІЛЬ" }]
+            });
+          }
+        }
+      }
+
+      return quests;
+    }
+
+    function syncProgress({ notify = false, renderModal = true } = {}) {
+      const st = store.get();
+      if (!st.questCompletedAt || typeof st.questCompletedAt !== "object") {
+        st.questCompletedAt = {};
+      }
+      const list = evaluateQuests();
+      let changed = false;
+
+      for (const q of list) {
+        if (q.completed && st.questCompletedAt[q.id] == null) {
+          st.questCompletedAt[q.id] = Date.now() + completionSeq++;
+          changed = true;
+          if (notify && q.id !== "main_chimera" && !st.playtestMode) {
+            bus.emit("state:toast", { category: "QUEST", text: `Виконано квест: ${q.title}` });
+          }
+        }
+      }
+
+      const active = list.filter((q) => !q.completed);
+      let tracked = active.find((q) => q.id === st.trackedQuestId);
+      if (!tracked && active.length > 0) {
+        tracked = active.find((q) => q.id === "main_chimera") || active[0];
+        st.trackedQuestId = tracked.id;
+        changed = true;
+      }
+
+      if (tracked && !st.playtestMode) {
+        st.questText = tracked.hudText || tracked.objective;
+      }
+
+      if (renderModal && st.mode === "JOURNAL") {
+        render({ list, tracked });
+      }
+      return { list, tracked, changed };
+    }
+
+    function getTrackedQuest() {
+      const st = store.get();
+      const list = evaluateQuests();
+      const active = list.filter((q) => !q.completed);
+      return (
+        active.find((q) => q.id === st.trackedQuestId) ||
+        active[0] ||
+        list[0] ||
+        null
+      );
+    }
+
+    function getTrackedTargets(zone) {
+      if (!zone) return [];
+      const tracked = getTrackedQuest();
+      if (!tracked || tracked.completed) return [];
+      if (tracked.zoneId === zone.id) {
+        return tracked.targetsInHomeZone || [];
+      }
+      const portal = findPortalPathStep(zone.id, tracked.zoneId);
+      if (portal) {
+        return [{
+          x: portal.x,
+          y: portal.y,
+          color: tracked.accent || "#f59e0b",
+          label: shortZoneName(tracked.zoneId).slice(0, 10).toUpperCase()
+        }];
+      }
+      return [];
+    }
+
+    function trackQuest(questId) {
+      const st = store.get();
+      const list = evaluateQuests();
+      const target = list.find((q) => q.id === questId);
+      if (!target || target.completed) return false;
+      st.trackedQuestId = target.id;
+      st.questText = target.hudText || target.objective;
+      bus.emit("ui:feedback", { kind: "questSelect" });
+      bus.emit("state:dirty");
+      bus.emit("state:toast", { category: "QUEST", text: `Відстежується: ${target.title}` });
+      if (st.mode === "JOURNAL") render();
+      return true;
+    }
+
+    function createQuestCard(q, isTracked) {
+      const card = document.createElement("article");
+      card.className = "quest-card" + (q.completed ? " done" : (isTracked ? " tracked" : ""));
+      card.dataset.questId = q.id;
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "quest-meta-row";
+
+      const leftMeta = document.createElement("span");
+      leftMeta.className = q.completed
+        ? "quest-kind-done"
+        : (q.kindType === "main" ? "quest-kind-main" : "quest-kind-side");
+      leftMeta.textContent = `${q.kind} · ${q.zoneTitle}`;
+
+      const rightMeta = document.createElement("span");
+      rightMeta.textContent = q.completed
+        ? `ВИКОНАНО · ${q.progress}`
+        : (isTracked ? `ВІДСТЕЖУЄТЬСЯ · ${q.progress}` : `АКТИВНЕ · ${q.progress}`);
+
+      metaRow.append(leftMeta, rightMeta);
+
+      const title = document.createElement("h5");
+      title.className = "quest-title";
+      title.textContent = q.title;
+
+      const desc = document.createElement("p");
+      desc.className = "quest-desc";
+      desc.textContent = q.desc;
+
+      const obj = document.createElement("p");
+      obj.className = "quest-objective";
+      obj.textContent = q.objective;
+
+      const foot = document.createElement("div");
+      foot.className = "quest-foot";
+
+      const reward = document.createElement("span");
+      reward.className = "quest-reward";
+      reward.textContent = `Нагорода: ${q.reward}`;
+      foot.appendChild(reward);
+
+      if (!q.completed) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn-mini btn-track" + (isTracked ? " active" : "");
+        btn.textContent = isTracked ? "Відстежується на радарі" : "Відстежувати";
+        btn.disabled = isTracked;
+        btn.addEventListener("click", () => trackQuest(q.id));
+        foot.appendChild(btn);
+      }
+
+      card.append(metaRow, title, desc, obj, foot);
+      return card;
+    }
+
+    function render(prepared = null) {
+      const st = store.get();
+      const { list, tracked } = prepared || syncProgress({ notify: false, renderModal: false });
+      const active = list.filter((q) => !q.completed);
+      const completed = list
+        .filter((q) => q.completed)
+        .sort((a, b) => (st.questCompletedAt?.[b.id] || 0) - (st.questCompletedAt?.[a.id] || 0));
+
+      activeCountEl.textContent = String(active.length);
+      completedCountEl.textContent = String(completed.length);
+      subEl.textContent = tracked
+        ? `На міні-карті зараз відстежується: «${tracked.title}» (${tracked.zoneTitle})`
+        : "Усі активні контракти сектора виконано";
+
+      activeListEl.innerHTML = "";
+      if (active.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "journal-empty";
+        empty.textContent = "Усі доступні завдання на цей момент виконані.";
+        activeListEl.appendChild(empty);
+      } else {
+        for (const q of active) {
+          activeListEl.appendChild(createQuestCard(q, tracked && q.id === tracked.id));
+        }
+      }
+
+      completedListEl.innerHTML = "";
+      if (completed.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "journal-empty";
+        empty.textContent = "Історія завершених завдань порожня — виконуйте контракти й побічні цілі.";
+        completedListEl.appendChild(empty);
+      } else {
+        for (const q of completed) {
+          completedListEl.appendChild(createQuestCard(q, false));
+        }
+      }
+    }
+
+    function open() {
+      const st = store.get();
+      if (st.mode !== "PLAYING" && st.mode !== "PAUSED") return false;
+      st.mode = "JOURNAL";
+      render();
+      modal.classList.add("open");
+      bus.emit("ui:feedback", { kind: "journalOpen" });
+      return true;
+    }
+
+    function close() {
+      const wasOpen = modal.classList.contains("open") || store.get().mode === "JOURNAL";
+      if (!wasOpen) return;
+      modal.classList.remove("open");
+      if (store.get().mode === "JOURNAL") store.get().mode = "PLAYING";
+      bus.emit("ui:feedback", { kind: "journalClose" });
+    }
+
+    function toggle() {
+      const st = store.get();
+      if (st.mode === "JOURNAL") {
+        close();
+        return false;
+      }
+      return open();
+    }
+
+    closeBtn.addEventListener("click", close);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) close();
+    });
+
+    [
+      "dialogue:choice",
+      "hack:success",
+      "entity:killed",
+      "pickup:reward",
+      "zone:change",
+      "quest:update",
+      "state:loaded",
+      "world:updated"
+    ].forEach((ev) => bus.on(ev, () => syncProgress({ notify: ev !== "state:loaded" })));
+
+    return {
+      evaluateQuests,
+      syncProgress,
+      getTrackedQuest,
+      getTrackedTargets,
+      trackQuest,
+      open,
+      close,
+      toggle,
+      render
+    };
+  }
+
+  /* ============================================================================
    * MODULE 12: HUD_UI & KERNEL_BOOTSTRAP
-   * Dependencies: All modules (01..11D)
+   * Dependencies: All modules (01..11E)
    * Exports: AppKernel (clean orchestrator connecting all seams)
    * Seam note: Main entry point; replace with framework router/shell in modular build
    * ========================================================================== */
@@ -5918,7 +6957,7 @@
   const bus = createEventBus();
   const store = createStateStore({ config: CONFIG, bus });
   const input = createInputManager({ canvas });
-  const audio = createAudioSynth({ bus });
+  const audio = createAudioSynth({ bus, store });
   const world = createWorldMap({ config: CONFIG, store, bus });
   const combat = createCombatEngine({ config: CONFIG, store, bus, world, input });
   const ai = createAIDirector({ store, world, combat });
@@ -5926,7 +6965,8 @@
   const dialogue = createDialogueQuest({ config: CONFIG, store, bus });
   const renderer = createRenderer({ canvas, config: CONFIG, store, world });
   const rainShader = createRainShader({ canvas: rainCanvas, store });
-  const minimapHud = createMinimapHud({ store, world });
+  const questJournal = createQuestJournal({ store, world, bus });
+  const minimapHud = createMinimapHud({ store, world, questJournal });
   let lastEditorZoneId = world.getZoneIds()[0] || "alley";
   let playtestZoneId = lastEditorZoneId;
   const playtestBar = document.getElementById("playtest-bar");
@@ -5972,6 +7012,7 @@
   const rainSlider = document.getElementById("rain-slider");
   const rainValLabel = document.getElementById("rain-val-label");
   const rainPresets = document.querySelectorAll("#rain-presets .preset-btn");
+  const btnUiAudioToggle = document.getElementById("btn-ui-audio-toggle");
   const btnSysPrimary = document.getElementById("btn-sys-primary");
   const btnContinue = document.getElementById("btn-continue-save");
   const autosaveEl = document.getElementById("hud-autosave");
@@ -5988,7 +7029,25 @@
     });
   }
 
+  function syncUiAudioSettingsUI(uiOn) {
+    if (!btnUiAudioToggle) return;
+    const on = Boolean(uiOn);
+    btnUiAudioToggle.textContent = on ? "Увімкнено" : "Вимкнено";
+    btnUiAudioToggle.classList.toggle("active", on);
+  }
+
   syncRainSettingsUI(store.getSetting("rainIntensity"));
+  syncUiAudioSettingsUI(store.getSetting("uiAudioEnabled"));
+
+  if (btnUiAudioToggle) {
+    btnUiAudioToggle.addEventListener("click", () => {
+      const next = !store.getSetting("uiAudioEnabled");
+      store.setSetting("uiAudioEnabled", next, { silent: false });
+      syncUiAudioSettingsUI(next);
+      if (next) bus.emit("ui:feedback", { kind: "toggle", active: true });
+      eventConsole.push("SYS", `Звук інтерфейсу (CRT): ${next ? "Увімкнено" : "Вимкнено"}`);
+    });
+  }
 
   rainSlider.addEventListener("input", (e) => {
     const val = Number(e.target.value) / 100;
@@ -6194,6 +7253,7 @@
     audio.unlock();
     modalTitle.classList.remove("open");
     modalSys.classList.remove("open");
+    questJournal.close();
     worldEditor.close();
     hudTop.style.display = "flex";
     hudBottom.style.display = "flex";
@@ -6201,6 +7261,7 @@
     playtestBar.classList.toggle("visible", Boolean(store.get().playtestMode));
     store.get().mode = "PLAYING";
     world.spawnZoneEntities(store.get().zoneId);
+    questJournal.syncProgress({ notify: false });
     window.focus();
   }
 
@@ -6231,6 +7292,7 @@
     st.overclockTimer = 0;
     playtestBar.classList.remove("visible");
     modalSys.classList.remove("open");
+    questJournal.close();
     document.getElementById("modal-dialogue").classList.remove("open");
     document.getElementById("modal-hack").classList.remove("open");
     document.getElementById("modal-shop").classList.remove("open");
@@ -6275,11 +7337,25 @@
   document.getElementById("btn-audio-toggle").addEventListener("click", (e) => {
     const on = audio.toggle();
     e.currentTarget.textContent = `Звук: ${on ? "Увімк" : "Вимк"}`;
+    if (on) bus.emit("ui:feedback", { kind: "toggle", active: true });
   });
 
+  document.getElementById("btn-journal-game").addEventListener("click", () => questJournal.toggle());
+  questEl.addEventListener("click", () => questJournal.toggle());
   document.getElementById("btn-save-game").addEventListener("click", () => store.save({ silent: false }));
   document.getElementById("btn-settings-game").addEventListener("click", () => openPause(true));
   document.getElementById("btn-pause-game").addEventListener("click", () => openPause(false));
+
+  // Global 90s CRT terminal UI click feedback for buttons and HUD controls
+  document.addEventListener("click", (e) => {
+    const target = e.target?.closest?.(
+      "button.btn-mini, button.btn-primary, button.btn-secondary, button.preset-btn, button.kw-btn, .quest-text.clickable, #minimap-toggle"
+    );
+    if (!target || target.disabled) return;
+    if (target.id === "btn-audio-toggle" || target.id === "btn-ui-audio-toggle") return;
+    audio.unlock();
+    bus.emit("ui:feedback", { kind: "click" });
+  });
 
   document.querySelectorAll(".skill-slot").forEach((el) => {
     el.addEventListener("click", () => {
@@ -6298,14 +7374,16 @@
     sysSub.textContent = isSettings ? "ГРАФІКА І АТМОСФЕРА" : (st.playtestMode ? "РЕЖИМ ПЕРЕВІРКИ РІВНЯ" : "РЕЙД ПРИЗУПИНЕНО");
     sysBody.textContent = st.playtestMode
       ? "Ви тестуєте світ із редактора. Збереження кампанії не зачіпається — можете будь-коли повернутися до редагування."
-      : "Відрегулюйте інтенсивність шейдерних опадів у реальному часі або поверніться до бою.";
+      : "Відрегулюйте інтенсивність шейдерних опадів, звук інтерфейсу або поверніться до бою.";
     sysSettings.style.display = "block";
     sysStats.style.display = "none";
     syncRainSettingsUI(store.getSetting("rainIntensity"));
+    syncUiAudioSettingsUI(store.getSetting("uiAudioEnabled"));
     btnSysPrimary.textContent = "Продовжити";
     btnSysPrimary.onclick = () => {
       modalSys.classList.remove("open");
       st.mode = "PLAYING";
+      bus.emit("ui:feedback", { kind: "close" });
     };
     if (st.playtestMode) {
       btnSysRestart.textContent = "До редактора";
@@ -6323,6 +7401,7 @@
       };
     }
     modalSys.classList.add("open");
+    bus.emit("ui:feedback", { kind: "open" });
   }
 
   function showEndModal(victory) {
@@ -6437,7 +7516,10 @@
     karmaEl.textContent = p.karma;
     keyIndEl.innerHTML = st.flags.hasSectorKey ? 'Ключ <strong>DATA-OK</strong>' : "";
     zoneEl.textContent = z.title;
-    questEl.textContent = st.questText;
+    const trackedQuest = questJournal.getTrackedQuest();
+    questEl.textContent = st.playtestMode
+      ? st.questText
+      : (trackedQuest ? (trackedQuest.hudText || trackedQuest.objective) : st.questText);
 
     if (st.combo.count >= 2) {
       comboBadge.classList.add("visible");
@@ -6491,9 +7573,10 @@
     // Global Esc handling
     if (input.wasPressed("Escape")) {
       if (st.mode === "PLAYING") openPause(false);
-      else if (st.mode === "PAUSED") { modalSys.classList.remove("open"); st.mode = "PLAYING"; }
+      else if (st.mode === "PAUSED") { modalSys.classList.remove("open"); st.mode = "PLAYING"; bus.emit("ui:feedback", { kind: "close" }); }
       else if (st.mode === "DIALOGUE") dialogue.closeDialogue();
       else if (st.mode === "SHOP") dialogue.closeShop();
+      else if (st.mode === "JOURNAL") questJournal.close();
       else if (st.mode === "HACKING") hacking.abort();
       else if (st.mode === "EDITOR") {
         if (worldEditor.isModalOpen()) worldEditor.closeJsonModal();
@@ -6501,13 +7584,21 @@
           worldEditor.close();
           st.mode = "TITLE";
           modalTitle.classList.add("open");
+          bus.emit("ui:feedback", { kind: "close" });
         }
       }
     }
 
-    // Minimap toggle (M) during active gameplay
-    if (input.wasPressed("KeyM") && (st.mode === "PLAYING" || st.mode === "PAUSED")) {
-      minimapHud.toggle();
+    // Quest Journal toggle (Tab / N) during gameplay or when journal is open
+    if ((input.wasPressed("Tab") || input.wasPressed("KeyN")) && (st.mode === "PLAYING" || st.mode === "PAUSED" || st.mode === "JOURNAL")) {
+      if (st.mode === "PAUSED") modalSys.classList.remove("open");
+      questJournal.toggle();
+    }
+
+    // Minimap toggle (M) during active gameplay or journal
+    if (input.wasPressed("KeyM") && (st.mode === "PLAYING" || st.mode === "PAUSED" || st.mode === "JOURNAL")) {
+      const shown = minimapHud.toggle();
+      bus.emit("ui:feedback", { kind: "toggle", active: shown });
     }
 
     // Rain update (used by fallback 2D renderer + shader time)
